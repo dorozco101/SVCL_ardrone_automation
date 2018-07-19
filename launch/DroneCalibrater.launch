@@ -15,15 +15,15 @@
 	</node>
 	
 	<!-- Launches the keyboard controller -->
-	  <node name="KeyboardController" pkg="ardrone_lab" type="keyboard_controller.py" required="true"/> --> 
+	  <node name="KeyboardController" pkg="svcl_ardrone_automation" type="keyboard_controller.py" required="true"/> --> 
 
 	<!-- Launches the video controller -->
-	<node name="DroneMaster" pkg="ardrone_lab" type="drone_master.py" required="true"/> -->
+	<node name="DroneMaster" pkg="svcl_ardrone_automation" type="drone_master.py" required="true"/> -->
 
         <!-- Launches flight statistics display -->
-	<node name="FlightstatsDisplay" pkg="ardrone_lab" type="flightstats_display.py" required="true"/> -->
+	<node name="FlightstatsDisplay" pkg="svcl_ardrone_automation" type="flightstats_display.py" required="true"/> -->
         
         <!-- Launches PID calibrater GUI -->
-	<node name="PID_Calibrater" pkg="ardrone_lab" type="pid_calibrater.py" required="True"/> -->
+	<node name="PID_Calibrater" pkg="svcl_ardrone_automation" type="pid_calibrater.py" required="True"/> -->
 
 </launch>

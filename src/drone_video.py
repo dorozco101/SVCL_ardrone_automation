@@ -2,10 +2,14 @@
 
 import sys
 import rospy
+import message_filters
 import numpy as np
+import os.path
 
 #Import messages we want for recieving video feed
-from sensor_msgs.msg import Image 
+from sensor_msgs.msg import Image, CameraInfo
+from std_msgs.msg import String
+from tum_ardrone.msg import *
 from ardrone_autonomy.msg import Navdata
 
 #Import service type for toggle cam
@@ -29,18 +33,26 @@ class DroneVideo(object):
         self.info = np.zeros((70,100,3), np.uint8)
 
         #Subscribe to the drones video feed
-        self.video=rospy.Subscriber('/ardrone/image_raw', Image, self.ROStoCVImage )
+        self.video = rospy.Subscriber('/ardrone/image_raw', Image, self.ROStoCVImage )
+        #self.video = message_filters.Subscriber('/ardrone/image_raw', Image)
 
+        self.state = rospy.Subscriber('/ardrone/predictedPose',filter_state,self.callback)
+        #self.state = message_filters.Subscriber('/ardrone/camera_info',CameraInfo)
         self.moved = False
-
 
     def ROStoCVImage(self,data):
         
         #convert ROS Image to OpenCV Image
+        #rospy.logwarn(state)
         self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         self.ShowVideo()
 
-
+    def callback(self,state):
+        self.x = state.x
+        self.y = state.y
+        self.z = state.z
+        #rospy.logwarn(str(self.x)+str(self.y)+str(self.z))
+        
     def ShowVideo(self):
         
         self.KeyListener()

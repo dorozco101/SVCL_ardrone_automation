@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>ardrone_lab</name>
+  <name>svcl_ardrone_automation</name>
   <version>0.0.0</version>
   <description>The ardrone_lab package</description>
 

@@ -2,7 +2,7 @@
 
 import sys
 import rospy
-
+import numpy as np
 #load the controller that has drone controlling functions
 from drone_controller import BasicDroneController
 from processing_functions.process_video import ProcessVideo
@@ -50,4 +50,21 @@ class DronePosition(object):
             yawspeed = self.process.ObjectOrientation(green_image,angle,5)
 
             return yawspeed
+
+        def yaw(self,angle):
+            R = np.identity(3)
+            theta = np.deg2rad(angle)
+            R[0,0] = cos(theta)
+            R[0,1] = -sin(theta)
+            R[1,0] = sin(theta)
+            R[1,1] = cos(theta)
+            return R
+
+        def body2World(self,angle,translation):
+            R = self.yaw(angle)
+            D = np.identity(4)
+            D[:3,:3] = R
+            D[:3,3] = translation
+				
+
             

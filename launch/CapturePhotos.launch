@@ -26,9 +26,12 @@
         </node>
 	
 	<!-- Launches the keyboard controller -->
-	  <node name="KeyboardController" pkg="ardrone_lab" type="keyboard_controller.py" required="true"/> --> 
+	  <node name="KeyboardController" pkg="svcl_ardrone_automation" type="keyboard_controller.py" required="true"/> --> 
+
+	<!-- Launches the state estimate node -->
+	  <node name="StateEstimation" pkg="tum_ardrone" type="drone_stateestimation" required="true"/> --> 
 
 	<!-- Launches the video controller -->
-	<node name="DroneMaster" pkg="ardrone_lab" type="drone_master.py" required="true"/> -->
+	<node name="DroneMaster" pkg="svcl_ardrone_automation" type="drone_master.py" required="true"/> -->
         
 </launch>
