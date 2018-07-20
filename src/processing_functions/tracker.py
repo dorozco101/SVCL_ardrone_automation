@@ -1,6 +1,6 @@
 
 import numpy as np
-
+reload(np)
 class Tracker(object):
     def __init__(self,roll = 0,pitch = 0,yaw = 0,translation = [0,0,0]):
         self.roll = roll
@@ -26,9 +26,9 @@ class Tracker(object):
     #updates the internal transform matrices to get a point from body2World or world2Body
     def updateTransforms(self):
         translation = np.asarray(self.translation)
-        self.world2BodyT,self.body2WorldT = self.world2BodyTrans(self.roll,self.pitch,self.yaw,translation)
-        self.world2CameraT,self.camera2WorldT = self.world2CameraTrans(self.roll,self,pitch,self.yaw,translation)
-        self.body2CameraT,self.camera2BodyT = self.body2CameraTrans(self.roll,self.pitch,self.yaw,translation)
+        self.world2BodyT,self.body2WorldT = self.world2BodyTrans(self.yaw,translation)
+        self.world2CameraT,self.camera2WorldT = self.world2CameraTrans(self.roll,self.pitch,self.yaw,translation)
+        self.body2CameraT,self.camera2BodyT = self.body2CameraTrans(self.roll,self.pitch)
     
 #creates matrix for rotation around y axis by angle theta in degrees 
     def pitchM(self,angle):
@@ -69,7 +69,7 @@ class Tracker(object):
 
     def body2CameraTrans(self,roll,pitch,yaw = 0,translation=[0,0,0]):
         T = np.identity(4)
-        Tp = camera2BodyTrans(self,roll,pitch)
+        Tp = self.camera2BodyTrans(self,roll,pitch)
         T = np.linalg.inv(Tp)
         return T,Tp
 
@@ -80,8 +80,8 @@ class Tracker(object):
         return T
 
 #takes position of the drone relative to the world frame (translation) and euler angles of the drone relative to world frame (roll,pitch,yaw) and returns a 4x4 matrix that will take a point in world frame and return it as a point in the world frame, also returns the body to world transformation as second return value.		
-    def world2BodyTrans(self,roll,pitch,yaw,translation):
-        Tp = self.body2WorldTrans(0,0,yaw,translation)
+    def world2BodyTrans(self,yaw,translation):
+        Tp = self.body2WorldTrans(yaw,translation)
         T = np.linalg.inv(Tp)
         return T,Tp
 
@@ -93,7 +93,7 @@ class Tracker(object):
 
     def world2CameraTrans(self,roll,pitch,yaw,translation):
         Tp = self.camera2WorldTrans(roll,pitch,yaw,translation)
-        T = np.linalg.ing(Tp)
+        T = np.linalg.inv(Tp)
         return T,Tp
 
     #takes in a 3D-vector representing a 3D coordinate in the drone frame and converts it to the world frame
@@ -116,4 +116,11 @@ class Tracker(object):
         v = np.ones([4,1])
         v[:3,0] = np.asarray(worldVector)
         return np.dot(self.world2CameraT,v)[:3]
+
+    def transform(self,transform,vector):
+        v = np.ones([4,1])
+        v[:3,0] = np.asarray(vector)
+        return np.dot(transform,vector)[:3]
+
+
 
