@@ -28,6 +28,7 @@ class Tracker(object):
         translation = np.asarray(self.translation)
         self.world2BodyT,self.body2WorldT = self.world2BodyTrans(self.yaw,translation)
         self.world2CameraT,self.camera2WorldT = self.world2CameraTrans(self.roll,self.pitch,self.yaw,translation)
+
         self.body2CameraT,self.camera2BodyT = self.body2CameraTrans(self.roll,self.pitch)
     
 #creates matrix for rotation around y axis by angle theta in degrees 
@@ -69,7 +70,7 @@ class Tracker(object):
 
     def body2CameraTrans(self,roll,pitch,yaw = 0,translation=[0,0,0]):
         T = np.identity(4)
-        Tp = self.camera2BodyTrans(self,roll,pitch)
+        Tp = self.camera2BodyTrans(roll,pitch)
         T = np.linalg.inv(Tp)
         return T,Tp
 
@@ -120,7 +121,7 @@ class Tracker(object):
     def transform(self,transform,vector):
         v = np.ones([4,1])
         v[:3,0] = np.asarray(vector)
-        return np.dot(transform,vector)[:3]
+        return np.dot(transform,v)[:3]
 
 
 

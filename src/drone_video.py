@@ -48,9 +48,10 @@ class DroneVideo(object):
         self.ShowVideo()
 
     def callback(self,state):
-        self.x = state.x
-        self.y = state.y
-        self.z = state.z
+        self.translation = [state.x,state.y,state.z]
+        self.yaw = state.yaw
+        self.roll = state.roll
+        self.pitch = state.pitch
         #rospy.logwarn(str(self.x)+str(self.y)+str(self.z))
         
     def ShowVideo(self):
