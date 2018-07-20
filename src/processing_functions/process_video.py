@@ -494,9 +494,7 @@ class ProcessVideo(object):
             cv2.circle(image, (cx,cy), 40, 255)
         
             return(cx,cy)
-
-	else:
-            
+        else:
             return (None, None)
 
 
