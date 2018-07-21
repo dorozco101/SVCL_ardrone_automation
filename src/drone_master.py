@@ -85,7 +85,6 @@ class DroneMaster(DroneVideo, FlightstatsReceiver):
         self.oldBattery = -1
         self.photoDirective = None
 
-
     # Each state machine that drone mastercan use is defined here;
     # When key is pressed, define the machine to be used and switch over to it.
     # Machines are defined as array of tuples. Each tuple represents a state's directive and duration
@@ -103,7 +102,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver):
             self.moveTime = 0.04
             self.waitTime = 0
 
-            pidDirective= PIDHoverColorDirective2("orange")
+            pidDirective= PIDHoverDirective(self.tracker,[0,0,0])
             pidDirective.Reset()
             alg = [(pidDirective,6)]
             #rospy.logwarn("test3")
@@ -112,7 +111,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver):
             algCycles = -1
 
 
-            self.MachineSwitch( None, alg, algCycles, None, HOVER_ORANGE_MACHINE)
+            self.MachineSwitch( None, alg, algCycles, None, "Basic Drone State Machine")
 
 
         # take picture
