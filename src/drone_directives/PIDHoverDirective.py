@@ -15,25 +15,18 @@ class PIDHoverDirective(AbstractDroneDirective):
     
     # sets up this directive
     # platformColor: color to hover over. Altitude is maintained
-    def __init__(self, tracker,target):
+    def __init__(self, tracker,target,waitDist=0.1):
         
-        #P,I,D = 0.054, 0.06352, 0.011475
-        P,I,D = 2.3,-20.,0.004
-        #P,I,D = 0.00405, 0.00285, 0
-        #self.pid = PIDController(Kp = P, Ki = I, Kd = D)
-        self.Kp = P
-        self.Ki = I
-        self.Kd = D
-        self.moveTime = 0.2
-        self.waitTime = 0
+        #self.Kp,self.Ki,self.Kd = 0.8,-20.0,0.004
+        self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005
         self.tracker = tracker
         self.target = target
+        self.waitDist = waitDist
         self.worldTarget = self.tracker.body2World(target)[:,0]
         #self.pub_pid_xspeed = rospy.Publisher('pid_xspeed', Float32, queue_size = 10)
         #self.pub_pid_yspeed = rospy.Publisher('pid_yspeed', Float32, queue_size = 10)
         #self.pub_pid_in_alt = rospy.Publisher('pid_in_alt', Int32, queue_size = 10)
         #rate = rospy.Rate(5)
-
 
     # given the image and navdata of the drone, returns the following in order:
     #
@@ -61,7 +54,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         #rospy.logwarn(str(self.dt))
         
         self.totalError = [self.totalError[0]+self.rollError*self.dt, 
-                        self.totalError[1]+self.pitchError*self.dt]
+                        self.totalError[1]+self.pitchError*self.dt,0]
         pRoll = -self.Kp*(self.rollError)
         iRoll = -self.Ki*(self.totalError[0])
         dRoll = -self.Kd*((self.rollError-self.lastError[0])/self.dt)
@@ -70,14 +63,24 @@ class PIDHoverDirective(AbstractDroneDirective):
         iPitch = self.Ki*(self.totalError[1])
         dPitch = self.Kd*((self.pitchError-self.lastError[1])/self.dt)
 
-        directiveStatus = 1
         self.lastError = self.currentTarget
         self.lastTime = self.currentTime
         rospy.logwarn(str(iRoll))
         rospy.logwarn(str(iPitch))
         roll = pRoll +iRoll+dRoll
         pitch = pPitch + iPitch + dPitch
-        return directiveStatus, (roll, pitch, 0, 0), image, None,self.moveTime, self.waitTime,None
+
+        if (abs(self.rollError) <= self.waitDist and abs(self.pitchError) <=self.waitDist):
+            directiveStatus = 1
+        else:
+            directiveStatus = 0
+        #Trim commands over the drones command limit
+        roll = 1 if roll>1 else roll
+        roll = -1 if roll<-1 else roll
+        pitch = 1 if pitch>1 else pitch
+        pitch = -1 if pitch<-1 else pitch
+        #rospy.logwarn(directiveStatus)
+        return directiveStatus, (roll, pitch, 0, 0), image, None,0, 0,None
 
 
     # This method is called by the state machine when it considers this directive finished
@@ -91,6 +94,6 @@ class PIDHoverDirective(AbstractDroneDirective):
         self.rollError = 0
         self.pitchError = 0
         self.lastError = [0,0]
-        self.totalError = [0,0]
+        self.totalError = [0,0,0]
 
 
