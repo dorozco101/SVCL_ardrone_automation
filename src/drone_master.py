@@ -99,10 +99,10 @@ class DroneMaster(DroneVideo, FlightstatsReceiver):
         # hover over orange
         if key == ord('1'):
             
-            self.moveTime = 0.04
+            self.moveTime = 0.1
             self.waitTime = 0
 
-            pidDirective= PIDHoverDirective(self.tracker,[0,0,0])
+            pidDirective= PIDHoverDirective(self.tracker,[0,1,0])
             pidDirective.Reset()
             alg = [(pidDirective,6)]
             #rospy.logwarn("test3")

@@ -22,7 +22,7 @@ class FlightstatsReceiver(object):
         # update navdata messages are recieved
         self.navdataSub = rospy.Subscriber('/ardrone/navdata', Navdata, self.UpdateNavdata)
         self.altitudeSub = rospy.Subscriber('/ardrone/navdata_altitude', navdata_altitude, self.UpdateAltitude)
-        self.video=rospy.Subscriber('/ardrone/image_raw', Image, self.VideoUpdate )
+        #self.video=rospy.Subscriber('/ardrone/image_raw', Image, self.VideoUpdate )
 
         # dictionary will hold a useful subset of available flight info
         # Key is the variable name; value is (description, value, units, (optional) direction string following units)
@@ -78,6 +78,7 @@ class FlightstatsReceiver(object):
         self.lastCenterCount = 0
         self.lastCenterMax = 8
 
+    '''
     def VideoUpdate(self, image):
         
         if (self.counter < self.computeMax) or self.restMax == 0:
@@ -109,6 +110,7 @@ class FlightstatsReceiver(object):
 
             if self.counter >= self.computeMax + self.restMax :
                 self.counter = 0
+    '''
     
 
     # Uses a more complex way to infer what platform to use. If there is only one platform, this is trivial,
@@ -217,7 +219,6 @@ class FlightstatsReceiver(object):
 
         #return center
         return self.lastLoc
-
 
     def getX(self,coordinates):
         return coordinates[0]
