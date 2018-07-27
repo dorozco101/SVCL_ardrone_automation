@@ -9,7 +9,7 @@ import time
 #Import messages we want for recieving video feed
 from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import String
-from tum_ardrone.msg import *
+from svcl_ardrone_automation.msg import *
 from ardrone_autonomy.msg import Navdata
 from processing_functions import *
 #Import service type for toggle cam
