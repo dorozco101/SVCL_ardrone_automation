@@ -9,7 +9,7 @@ from processing_functions.pid_controller import PIDController
 from os.path import expanduser
 from std_msgs.msg import Int32, Float32
 
-# describes instruction on what the drone should do in order to hover over 
+# describes instruction on what the drone should do in order to hoves over 
 # a specified color underneath it
 class PIDYawDirective(AbstractDroneDirective):
     
@@ -17,9 +17,9 @@ class PIDYawDirective(AbstractDroneDirective):
     # platformColor: color to hover over. Altitude is maintained
     def __init__(self, tracker,target,yaw,waitDist = 0.1,waitAngle = 2):
         
-        #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005
-        self.Kp,self.Ki,self.Kd = 0.1,0.0,0.0005
-        self.KpYaw,self.KiYaw,self.KdYaw = 0.000005,0,0
+        self.Kp,self.Ki,self.Kd = 0.1,0.0,0.0004
+        #self.Kp,self.Ki,self.Kd = 0.1,0.0,0.0005
+        self.KpYaw,self.KiYaw,self.KdYaw = (1/180.0)*0.8,0,0
 
         self.tracker = tracker
         if (len(target) == 0):
@@ -50,13 +50,14 @@ class PIDYawDirective(AbstractDroneDirective):
     #
     # An image reflecting what is being done as part of the algorithm
     def RetrieveNextInstruction(self, image, navdata):
+        rospy.logwarn("target yaw: " + str(self.targetYaw))
         self.currentTime = time.time()
         #Get current target in the drone frame
         self.currentTarget = self.tracker.world2Body(self.worldTarget)
         self.currentYaw = self.tracker.yaw
         #Calculate closest rotation to get to target angle
         theta = ((self.targetYaw - self.currentYaw)%360 + 360)%360
-        theta = (360-theta) if (theta >180) else theta
+        theta = (theta-360) if (theta >180) else theta
         #rospy.logwarn("ctheta: " +str(self.tracker.yaw))        
         #rospy.logwarn("theta: "+str(self.targetYaw))
         if self.lastTime == 0:
@@ -73,7 +74,7 @@ class PIDYawDirective(AbstractDroneDirective):
         self.totalError = [self.totalError[0]+self.rollError*self.dt, 
                         self.totalError[1]+self.pitchError*self.dt,
                         self.totalError[2]+self.yawError*self.dt,0]
-
+        
         pRoll = -self.Kp*(self.rollError)
         iRoll = -self.Ki*(self.totalError[0])
         dRoll = -self.Kd*((self.rollError-self.lastError[0])/self.dt)
@@ -84,10 +85,11 @@ class PIDYawDirective(AbstractDroneDirective):
         pPitch = self.Kp*(self.pitchError)
         iPitch = self.Ki*(self.totalError[1])
         dPitch = self.Kd*((self.pitchError-self.lastError[1])/self.dt)
+
         pitch = pPitch + iPitch + dPitch
         pitch = 1 if pitch>1 else pitch
         pitch = -1 if pitch<-1 else pitch
-
+        
         pYaw = self.KpYaw*(self.yawError)
         iYaw = self.KiYaw*(self.totalError[2])
         dYaw = self.KdYaw*((self.yawError-self.lastYawError)/self.dt)
@@ -96,13 +98,13 @@ class PIDYawDirective(AbstractDroneDirective):
         self.lastError = self.currentTarget
         self.lastYawError = self.yawError
         self.lastTime = self.currentTime
-        rospy.logwarn(str(pRoll))
-        rospy.logwarn(str(pPitch))
+        rospy.logwarn("yaw: " +str(self.currentYaw))
 
-        if (abs(self.rollError) <= self.waitDist and abs(self.pitchError) <=self.waitDist) and abs(theta)<self.waitAngle:
+        #if (abs(self.rollError) <= self.waitDist and abs(self.pitchError) <=self.waitDist) and abs(theta)<self.waitAngle:
+        if (abs(theta)<self.waitAngle):
             directiveStatus = 1
         else:
-            directiveStatus = 0
+            directiveStatus = 1
         #Trim commands over the drones command limit
         
 

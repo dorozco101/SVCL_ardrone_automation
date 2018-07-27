@@ -15,7 +15,7 @@ class Tracker(object):
         self.yaw = 0
         self.translation = [0,0,0]
         self.updateTransforms()
-
+    #positive yaw defined to be counter clockwise
     def update(self,roll,pitch,yaw,translation = [0,0,0]):
         self.roll = roll
         self.pitch = pitch
@@ -117,6 +117,16 @@ class Tracker(object):
         v = np.ones([4,1])
         v[:3,0] = np.asarray(worldVector)
         return np.dot(self.world2CameraT,v)[:3]
+
+    def camera2Body(self,cameraVector):
+        v= np.ones([4,1])
+        v[:3,0] = np.asarray(cameraVector)
+        return np.dot(self.camera2BodyT,v)[:3]
+
+    def body2Camera(self,bodyVector):
+        v= np.ones([4,1])
+        v[:3,0] = np.asarray(bodyVector)
+        return np.dot(self.body2CameraT,v)[:3]
 
     def transform(self,transform,vector):
         v = np.ones([4,1])

@@ -12,6 +12,27 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  cv_bridge
+  dynamic_reconfigure
+  geometry_msgs
+  sensor_msgs
+  std_srvs
+  message_generation
+)
+
+# Compile third party libs
+include(ExternalProject)
+ExternalProject_Add(thirdparty
+	URL ${PROJECT_SOURCE_DIR}/thirdparty/thirdparty.tar.gz
+	PREFIX ${CMAKE_BINARY_DIR}/thirdparty
+	CONFIGURE_COMMAND ""
+	BUILD_COMMAND make
+	INSTALL_COMMAND ""
+	BUILD_IN_SOURCE 1
+)
+
+generate_dynamic_reconfigure_options(
+  cfg/StateestimationParams.cfg
 )
 
 ## System dependencies are found with CMake's conventions
@@ -26,6 +47,33 @@ find_package(catkin REQUIRED COMPONENTS
 ################################################
 ## Declare ROS messages, services and actions ##
 ################################################
+
+## Generate messages in the 'msg' folder
+add_message_files(FILES filter_state.msg)
+
+## Generate services in the 'srv' folder
+add_service_files(
+	DIRECTORY srv
+	FILES
+	SetReference.srv
+	SetMaxControl.srv
+	SetInitialReachDistance.srv
+	SetStayWithinDistance.srv
+	SetStayTime.srv
+)
+
+## Generate added messages 
+generate_messages(DEPENDENCIES std_msgs)
+
+###################################
+## catkin specific configuration ##
+###################################
+catkin_package(CATKIN_DEPENDS message_runtime std_msgs ardrone_autonomy)
+
+###########
+## Build ##
+###########
+#include_directories(${catkin_INCLUDE_DIRS})
 
 ## To declare and build messages, services or actions from within this
 ## package, follow these steps:
@@ -106,7 +154,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ardrone_lab
-  CATKIN_DEPENDS ardrone_autonomy roscpp rospy std_msgs
+  CATKIN_DEPENDS ardrone_autonomy roscpp rospy std_msgs message_runtime std_msgs
   DEPENDS system_lib
 )
 
@@ -119,8 +167,83 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${CMAKE_BINARY_DIR}/thirdparty/src/thirdparty/TooN/include
+  ${CMAKE_BINARY_DIR}/thirdparty/src/thirdparty/libcvd/include
+  ${CMAKE_BINARY_DIR}/thirdparty/src/thirdparty/gvars3/include
 )
 
+# --------------------------- stateestimation & PTAM --------------------------------
+# set header ans source files
+set(STATEESTIMATION_SOURCE_FILES       
+  src/stateestimation/GLWindow2.cc
+  src/stateestimation/GLWindowMenu.cc  
+  src/stateestimation/main_stateestimation.cpp
+  src/stateestimation/DroneKalmanFilter.cpp
+  src/stateestimation/Predictor.cpp
+  src/stateestimation/PTAMWrapper.cpp
+  src/stateestimation/MapView.cpp
+  src/stateestimation/EstimationNode.cpp
+  src/stateestimation/PTAM/ATANCamera.cc
+  src/stateestimation/PTAM/Bundle.cc
+  src/stateestimation/PTAM/HomographyInit.cc
+  src/stateestimation/PTAM/KeyFrame.cc
+  src/stateestimation/PTAM/Map.cc
+  src/stateestimation/PTAM/MapMaker.cc
+  src/stateestimation/PTAM/MapPoint.cc
+  src/stateestimation/PTAM/MiniPatch.cc
+  src/stateestimation/PTAM/PatchFinder.cc
+  src/stateestimation/PTAM/Relocaliser.cc
+  src/stateestimation/PTAM/ShiTomasi.cc
+  src/stateestimation/PTAM/SmallBlurryImage.cc
+  src/stateestimation/PTAM/Tracker.cc
+)
+set(STATEESTIMATION_HEADER_FILES    
+  src/stateestimation/GLWindow2.h 
+  src/stateestimation/GLWindowMenu.h    
+  src/stateestimation/MouseKeyHandler.h  
+  src/HelperFunctions.h   
+  src/stateestimation/DroneKalmanFilter.h        
+  src/stateestimation/Predictor.h 
+  src/stateestimation/PTAMWrapper.h
+  src/stateestimation/MapView.h
+  src/stateestimation/EstimationNode.h
+  src/stateestimation/PTAM/ATANCamera.h
+  src/stateestimation/PTAM/Bundle.h
+  src/stateestimation/PTAM/customFixes.h
+  src/stateestimation/PTAM/HomographyInit.h
+  src/stateestimation/PTAM/KeyFrame.h
+  src/stateestimation/PTAM/LevelHelpers.h
+  src/stateestimation/PTAM/Map.h
+  src/stateestimation/PTAM/MapMaker.h
+  src/stateestimation/PTAM/MapPoint.h
+  src/stateestimation/PTAM/MEstimator.h
+  src/stateestimation/PTAM/MiniPatch.h
+  src/stateestimation/PTAM/OpenGL.h
+  src/stateestimation/PTAM/PatchFinder.h
+  src/stateestimation/PTAM/Relocaliser.h
+  src/stateestimation/PTAM/settingsCustom.h
+  src/stateestimation/PTAM/ShiTomasi.h
+  src/stateestimation/PTAM/SmallBlurryImage.h
+  src/stateestimation/PTAM/SmallMatrixOpts.h
+  src/stateestimation/PTAM/TrackerData.h
+  src/stateestimation/PTAM/Tracker.h
+  src/stateestimation/PTAM/VideoSource.h
+)
+
+
+link_directories(
+  ${CMAKE_BINARY_DIR}/thirdparty/src/thirdparty/libcvd/lib 
+  ${CMAKE_BINARY_DIR}/thirdparty/src/thirdparty/gvars3/lib 
+)
+
+set(PTAM_LIBRARIES GL glut cvd GVars3 blas lapack)
+add_definitions(-DKF_REPROJ)
+
+# build!
+add_executable(drone_stateestimation ${STATEESTIMATION_SOURCE_FILES} ${STATEESTIMATION_HEADER_FILES})
+set_target_properties(drone_stateestimation PROPERTIES COMPILE_FLAGS "-D_LINUX -D_REENTRANT -Wall  -O3 -march=nocona -msse3") 
+target_link_libraries(drone_stateestimation ${PTAM_LIBRARIES} ${catkin_LIBRARIES})
+add_dependencies(drone_stateestimation thirdparty ${PROJECT_NAME}_gencpp ${PROJECT_NAME}_gencfg)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -199,3 +322,5 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+

@@ -41,6 +41,8 @@ class DroneVideo(object):
         self.moved = False
         self.currentTime = 0
         self.tracker = Tracker()
+        self.lastTime = 0
+        self.window = [0,0,0,0,0,0,0,0,0]
 
     def ROStoCVImage(self,data):
         
@@ -51,11 +53,11 @@ class DroneVideo(object):
         
     def callback(self,state):
         self.translation = [state.x,state.y,state.z]
-        self.yaw = state.yaw
+        self.yaw = -state.yaw
         self.roll = state.roll
         self.pitch = state.pitch
         #rospy.logwarn(str(self.x)+str(self.y)+str(self.z))
-        self.currentTime = time.time()
+        
         self.tracker.update(self.roll,self.pitch,self.yaw,self.translation)
 
     def ShowVideo(self):
@@ -63,8 +65,17 @@ class DroneVideo(object):
         self.KeyListener()
 
         self.ReceivedVideo()
-
-    
+        self.lastTime = self.currentTime        
+        self.currentTime = time.time()
+        dtime = self.currentTime-self.lastTime*1000.0
+        sum = 0
+        for i in range(len(self.window)-1):
+            self.window[i]=self.window[i+1]
+            sum += self.window[i]
+        sum=sum/(len(self.window)-1)
+            
+        self.window[len(self.window)-1]=dtime
+        
         cv2.imshow(self.windowName, self.cv_image)
         cv2.imshow(self.infoWindow, self.info)
         cv2.waitKey(3)

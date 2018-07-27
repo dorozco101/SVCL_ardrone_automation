@@ -139,8 +139,12 @@ class ProcessVideo(object):
     def CalcDistanceNew(self,objectTrueSize,objectPixels,focalLength = 715.6186, offset = 5.1371):
         distance = ( (focalLength*objectTrueSize)/(objectPixels))+offset
         return distance
-        
-
+    
+    def calcScale(self,objectTrueSize,distance,focalLength = 715.6186,offset = 5.1371):
+        objectPixels = (focalLength*objectTrueSize)/(distance-offset)
+        return objectPixels
+    def CircleScale(self,objectPixels,objectTrueSize):
+            return (float(objectTrueSize)/objectPixels)
     #calculates the focal length of a flat lense, given as parameters: an objects apparent size in pixels,
     #an objects true size in mm, and the distance from the object in mm
     def CalcFocal(self,objectPixelSize,objectTrueSize,distance):

@@ -17,6 +17,7 @@ from state_machine import StateMachine
 from processing_functions import *
 from drone_directives import *
 from processing_functions.picture_manager import PictureManager
+from std_msgs.msg import Float32MultiArray
 
 # list of possible state machines that can be used to control drone
 HOVER_ORANGE_MACHINE = "hover_orange"
@@ -84,7 +85,8 @@ class DroneMaster(DroneVideo, FlightstatsReceiver):
         self.captureRound = 0.5
         self.oldBattery = -1
         self.photoDirective = None
-
+        self.pub = rospy.Publisher('ardrone/hello',Float32MultiArray)
+        
     # Each state machine that drone mastercan use is defined here;
     # When key is pressed, define the machine to be used and switch over to it.
     # Machines are defined as array of tuples. Each tuple represents a state's directive and duration
@@ -102,8 +104,10 @@ class DroneMaster(DroneVideo, FlightstatsReceiver):
             self.moveTime = 0.11
             self.waitTime = 0
 
-            pidDirective= PIDYawDirective(self.tracker,[0,1,0],90)
+            pidDirective= PIDHoverDirective(self.tracker,[0,0.0,0])
             pidDirective.Reset()
+            pidYawDirective= PIDYawDirective(self.tracker,[0,0.0,0],0)
+            #alg = [(pidYawDirective,8)]
             alg = [(pidDirective,6)]
             #rospy.logwarn("test3")
             #alg = [(HoverColorDirective("orange"),6)]
@@ -256,7 +260,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver):
     # Runs an iteration of the current state machine to get the next set of instructions, depending on the 
     # machine's current state.
     def ReceivedVideo(self):
-        
+        self.pub.publish(Float32MultiArray(data=[1.0,1.2,1.3]))
         # checks altitude; if it is higher than allowed, then drone will land
         currHeightReg = self.flightInfo["altitude"][1]
         if currHeightReg == '?':
