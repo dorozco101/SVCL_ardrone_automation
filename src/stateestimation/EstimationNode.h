@@ -49,6 +49,7 @@ private:
 	ros::Subscriber navdata_sub; // drone navdata
 	ros::Subscriber vel_sub; // to co-read contro commands sent from other thread
 	ros::Subscriber vid_sub;
+	ros::Subscriber tracker_sub;
 	ros::Time lastNavStamp;
 
 
@@ -78,6 +79,7 @@ private:
 	std::string output_channel;
 	std::string video_channel;
 	std::string command_channel;
+	std::string tracker_channel;
 
 
 
@@ -106,6 +108,7 @@ public:
 	void velCb(const geometry_msgs::TwistConstPtr velPtr);
 	void vidCb(const sensor_msgs::ImageConstPtr img);
 	void comCb(const std_msgs::StringConstPtr str);
+	void trackerCb(const std_msgs::Float32MultiArray::constPtr& msg);
 	void dynConfCb(svcl_ardrone_automation::StateestimationParamsConfig &config, uint32_t level);
 
 	// main pose-estimation loop
