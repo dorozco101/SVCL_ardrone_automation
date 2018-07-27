@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_srvs
   message_generation
+  
 )
 
 # Compile third party libs
@@ -49,7 +50,11 @@ generate_dynamic_reconfigure_options(
 ################################################
 
 ## Generate messages in the 'msg' folder
-add_message_files(FILES filter_state.msg)
+add_message_files(
+FILES 
+filter_state.msg
+tracker.msg
+)
 
 ## Generate services in the 'srv' folder
 add_service_files(
