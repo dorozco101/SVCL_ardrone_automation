@@ -56,7 +56,7 @@ EstimationNode::EstimationNode()
     output_channel = nh_.resolveName("ardrone/predictedPose");
     video_channel = nh_.resolveName("ardrone/image_raw");
     command_channel = nh_.resolveName("svcl_ardrone_automation/com");
-    tracker_channel = nh_.resolveName("ardrone/tracker")
+    tracker_channel = nh_.resolveName("ardrone/tracker");
 	packagePath = ros::package::getPath("svcl_ardrone_automation");
 
 	std::string val;
@@ -253,22 +253,15 @@ void EstimationNode::comCb(const std_msgs::StringConstPtr str)
 	}
 }
 
-#include <iostream>//probably included but just in case.
-void EstimationNode::trackerCb(const std_msgs::Float32MultiArray::constPtr& msg)
+void EstimationNode::trackerCb(const std_msgs::Float32MultiArray::ConstPtr& msg)
 {
 	std::vector<float> data = msg->data;
 	for(unsigned int i=0;i<data.size();i++)
 	{
-		std::cout << data[i];
-		if(i == 3 || i == 7 || i == 9)
-		{
-			std::cout << std::endl;
-		}
-		else
-		{
-			std::cout << " ";
-		}
+        
+		ROS_WARN("%f", data[i]);
 	}
+    ROS_WARN("\n");
 }
 
 void EstimationNode::Loop()
