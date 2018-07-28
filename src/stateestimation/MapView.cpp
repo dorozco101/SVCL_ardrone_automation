@@ -287,16 +287,6 @@ void MapView::Render()
 	  glPopMatrix();
 	}
 
-	glBegin(GL_LINE_LOOP);
-	glColor3f(0,0,1);
-	
-	for(unsigned int i=0;i<100;i++)
-	{
-		float angle = (2*3.14159265/180*(i/100.0));
-		glVertex3f(cos(angle), sin(angle), 1);
-	}
-
-	glEnd();
 
 	myGLWindow->swap_buffers();
 	myGLWindow->HandlePendingEvents();
@@ -344,10 +334,10 @@ void MapView::drawTrail()
 
 	glBegin(GL_LINE_LOOP);
 	glColor3f(1,0.5,0);
+    float x=0,y=0,z=0;
 	for(unsigned int i=0;i<100;i++)
 	{
 		float angle = ((2*3.14159265)*(i/100.0));
-		float x=0,y=0,z=0;
 		glVertex3f((float)0.088*cos(angle)+x, (float) 0.088*sin(angle)+y, z);
 		
 	}

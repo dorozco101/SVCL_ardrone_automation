@@ -34,6 +34,7 @@
 #include <ardrone_autonomy/Navdata.h>
 #include "deque"
 #include "svcl_ardrone_automation/filter_state.h"
+#include "svcl_ardrone_automation/tracker.h"
 #include "PTAMWrapper.h"
 #include "std_msgs/String.h"
 #include "std_msgs/Empty.h"
@@ -120,7 +121,7 @@ EstimationNode::~EstimationNode()
 	//delete infoQueue;
 }
 void EstimationNode::navdataCb(const ardrone_autonomy::NavdataConstPtr navdataPtr)
-{
+{   
 	lastNavdataReceived = *navdataPtr;
 	if(ros::Time::now() - lastNavdataReceived.header.stamp > ros::Duration(30.0))
 		lastNavdataReceived.header.stamp = ros::Time::now();
@@ -253,15 +254,15 @@ void EstimationNode::comCb(const std_msgs::StringConstPtr str)
 	}
 }
 
-void EstimationNode::trackerCb(const std_msgs::Float32MultiArray::ConstPtr& msg)
+void EstimationNode::trackerCb(const svcl_ardrone_automation::tracker& msg)
 {
-	std::vector<float> data = msg->data;
-	for(unsigned int i=0;i<data.size();i++)
+    boost::array<float, 4ul> landMark = msg.landMark;
+    boost::array<float,4ul> loc = msg.loc;
+    boost::array<float,2ul> yaw = msg.yaw;
+	for(unsigned int i=0;i<landMark.size();i++)
 	{
-        
-		ROS_WARN("%f", data[i]);
+		ROS_WARN("%f", landMark[i]);
 	}
-    ROS_WARN("\n");
 }
 
 void EstimationNode::Loop()

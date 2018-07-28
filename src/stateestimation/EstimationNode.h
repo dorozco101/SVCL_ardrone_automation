@@ -32,6 +32,7 @@
 #include "std_srvs/Empty.h"
 #include "ardrone_autonomy/Navdata.h"
 #include "svcl_ardrone_automation/filter_state.h"
+#include "svcl_ardrone_automation/tracker.h"
 #include "std_msgs/String.h"
 #include "std_msgs/Float32MultiArray.h"
 #include <dynamic_reconfigure/server.h>
@@ -109,7 +110,7 @@ public:
 	void velCb(const geometry_msgs::TwistConstPtr velPtr);
 	void vidCb(const sensor_msgs::ImageConstPtr img);
 	void comCb(const std_msgs::StringConstPtr str);
-	void trackerCb(const std_msgs::Float32MultiArray::ConstPtr& msg);
+	void trackerCb(const svcl_ardrone_automation::tracker& msg);
 	void dynConfCb(svcl_ardrone_automation::StateestimationParamsConfig &config, uint32_t level);
 
 	// main pose-estimation loop

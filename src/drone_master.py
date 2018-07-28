@@ -262,9 +262,9 @@ class DroneMaster(DroneVideo, FlightstatsReceiver):
     # machine's current state.
     def ReceivedVideo(self):
         track = tracker()
-        track.landMark = (1.0,2.0,3.0,4.0)
-        track.loc = (2.0,3.0,1.,2.)
-        track.yaw = (3.0,4.0)
+        track.landMark = (1.0,1.0,0.0,1.0)
+        track.loc = (2.0,3.0,1.,0.0)
+        track.yaw = (3.0,0.0)
 
         self.pub.publish(track)
         # checks altitude; if it is higher than allowed, then drone will land
