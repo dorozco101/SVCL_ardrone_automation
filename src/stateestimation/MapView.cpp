@@ -340,6 +340,11 @@ void MapView::drawTrail()
 	boost::array<float, 2ul> yaw;
 	node->getCircle(landMark, loc, yaw);
 
+	if(yaw[1] == 1)
+	{
+		predConvert->yaw = yaw[0];
+	}
+
 	for(unsigned int i=0;i<20 && landMark[3]==1;i++)
 	{
 		float angle = ((2*3.14159265)*(i/20.0));
