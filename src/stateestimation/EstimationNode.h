@@ -119,7 +119,7 @@ public:
 
 	//SVCL code
 	inline void getCircle(boost::array<float, 4ul> &m_landMark, boost::array<float, 4ul> &m_loc, boost::array<float, 2ul> &m_yaw)
-	{m_landMark = landMark; m_loc = loc; m_yaw = yaw}
+	{m_landMark = landMark; m_loc = loc; m_yaw = yaw;}
 
 	// main pose-estimation loop
 	void Loop();

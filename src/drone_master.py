@@ -75,7 +75,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver):
         # drone starts without any machine loaded, so that it can be controlled using the keyboard
         self.currMachine = None
 
-        # initalizing helper objects
+        # i1nitalizing helper objects
         self.pictureManager = PictureManager(self.droneRecordPath)
         self.controller = BasicDroneController("TraceCircle")
         self.startTimer = time.clock()

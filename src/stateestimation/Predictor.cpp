@@ -139,6 +139,7 @@ void Predictor::predictOneStep(ardrone_autonomy::Navdata* nfo)
 	yaw = nfo->rotZ/1000.0;
 
 }
+//setPostRPY params: x,y,z,roll,pitch,yaw
 void Predictor::resetPos()
 {
 	zCorrupted = false;
