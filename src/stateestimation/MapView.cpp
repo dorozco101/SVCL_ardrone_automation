@@ -344,8 +344,8 @@ void MapView::drawTrail()
 	{
 		//predConvert->yaw = yaw[0];
 		//double newX, double newY, double newZ, double newRoll, double newPitch, double newYaw
-		predConvert->setPosRPY(predConvert.x,predConvert.y,predConvert.z,
-				       predConvert.roll,predConvert.pitch,yaw[0]);
+		predConvert->setPosRPY(predConvert->x,predConvert->y,predConvert->z,
+				       predConvert->roll,predConvert->pitch,yaw[0]);
 	}
 
 	for(unsigned int i=0;i<20 && landMark[3]==1;i++)
