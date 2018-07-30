@@ -346,13 +346,13 @@ void MapView::drawTrail()
 		//double newX, double newY, double newZ, double newRoll, double newPitch, double newYaw
 		predConvert->setPosRPY(predConvert->x,predConvert->y,predConvert->z,
 				       predConvert->roll,predConvert->pitch,yaw[0]);
+		ROS_WARN("Updating the yaw to %f", yaw[0]);
 	}
 
 	for(unsigned int i=0;i<20 && landMark[3]==1;i++)
 	{
 		float angle = ((2*3.14159265)*(i/20.0));
 		glVertex3f((float)0.088*cos(angle)+landMark[0], (float) 0.088*sin(angle)+landMark[1], landMark[2]);
-		
 	}
 
 	glEnd();
