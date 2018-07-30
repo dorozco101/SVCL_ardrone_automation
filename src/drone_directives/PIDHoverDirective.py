@@ -16,13 +16,13 @@ class PIDHoverDirective(AbstractDroneDirective):
     
     # sets up this directive
     # platformColor: color to hover over. Altitude is maintained
-    def __init__(self, tracker,target,waitDist=0.1):
+    def __init__(self, poseTracker,target,waitDist=0.1):
         
         #self.Kp,self.Ki,self.Kd = 0.11,0.0,0.0004
         #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005 #best
         self.Kp,self.Ki,self.Kd = 0.1,10.0,0.0004
 
-        self.tracker = tracker
+        self.tracker = poseTracker
         self.target = target
         self.waitDist = waitDist
         self.worldTarget = self.tracker.body2World(target)[:,0]
@@ -46,21 +46,28 @@ class PIDHoverDirective(AbstractDroneDirective):
 
         segImage, radius, center = self.processVideo.RecognizeShape(image, 'orange',(None,None))
         self.yaw = self.tracker.yaw
-        self.worldPoint = None
-
+        #radius = None
+        #segImage = image
         if radius != None:
             predictedZ = self.processVideo.CalcDistanceNew(88.0, radius* 2)/1000.0
             scale = (88.0/(radius*2))/1000.0 #meters/pixel
             x = (center[0]-self.centerx)*scale
             y = (self.centery-center[1])*scale
-            self.currentTarget = self.tracker.camera2Body([x,y,-predictedZ])
-            self.worldPoint = self.tracker.camera2World([x,y,-predictedZ])
+            
+            tape = self.tracker.camera2Body([x,y,-predictedZ])
+            worldPoint = self.tracker.camera2World([x,y,-predictedZ])
+            if ((worldPoint[0]-self.worldTarget[0])**2+(worldPoint[1]-self.worldTarget[1])**2)**(0.5) < 0.15:
+                self.currentTarget = tape
+                #self.currentTarget = self.tracker.world2Body(self.worldTarget)
+            else:
+                self.currentTarget = self.tracker.world2Body(self.worldTarget)
             self.track.landMark = (worldPoint[0],worldPoint[1],worldPoint[2],1.0)
             self.pub.publish(self.track)
         else:
-            self.currentTaret = self.tracker.world2Body(self.worldTarget)
+            self.currentTarget = self.tracker.world2Body(self.worldTarget)
             self.track.landMark = (0,0,0,0.0)
-            self.pub.publish(track)
+            self.pub.publish(self.track)
+
         self.currentTime = time.time()
 
         if self.lastTime == 0:
