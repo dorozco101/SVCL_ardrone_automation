@@ -8,6 +8,7 @@ from AbstractDroneDirective import *
 from processing_functions.pid_controller import PIDController
 from os.path import expanduser
 from std_msgs.msg import Int32, Float32
+from svcl_ardrone_automation.msg import *
 
 # describes instruction on what the drone should do in order to hover over 
 # a specified color underneath it
@@ -28,7 +29,9 @@ class PIDHoverDirective(AbstractDroneDirective):
         self.processVideo = ProcessVideo()
         self.centery = 360/2.0
         self.centerx = 640/2.0
-        
+        self.pub = rospy.Publisher('ardrone/tracker',tracker)
+        self.track = tracker()
+
     # given the image and navdata of the drone, returns the following in order:
     #
     # A directive status int:
@@ -42,33 +45,24 @@ class PIDHoverDirective(AbstractDroneDirective):
     def RetrieveNextInstruction(self, image, navdata):
 
         segImage, radius, center = self.processVideo.RecognizeShape(image, 'orange',(None,None))
-        self.z = self.tracker.translation[2]
         self.yaw = self.tracker.yaw
-        #rospy.logwarn("yaw: "+str(self.yaw))
-        predicted_radius = self.processVideo.calcScale(88.0,self.z*1000.0)
+        self.worldPoint = None
+
         if radius != None:
             predictedZ = self.processVideo.CalcDistanceNew(88.0, radius* 2)/1000.0
-            #rospy.logwarn("predicted z: "+str(predictedZ))
-            #rospy.logwarn("diameter: " +str(radius*2))
             scale = (88.0/(radius*2))/1000.0 #meters/pixel
             x = (center[0]-self.centerx)*scale
             y = (self.centery-center[1])*scale
-            
-            #rospy.logwarn("point in drone frame: "+str(self.tracker.camera2Body([x,y,-predictedZ])))
-        #rospy.logwarn("predicted diameter: "+str(predicted_radius))
-        #if radius != None:
-            #rospy.logwarn("dif: "+str(abs(predicted_radius-2*radius)))
-
-        self.currentTime = time.time()
-        #rospy.logwarn(self.worldTarget)
-        #rospy.logwarn(type(self.worldTarget))
-        if radius != None:
             self.currentTarget = self.tracker.camera2Body([x,y,-predictedZ])
-        else:            
-            self.currentTarget = self.tracker.world2Body(self.worldTarget)
-        #rospy.logwarn("current target:" +str(self.currentTarget))
-        #rospy.logwarn("world: "+str(self.worldTarget))
-        #rospy.logwarn("cposition: " +str(self.tracker.translation))
+            self.worldPoint = self.tracker.camera2World([x,y,-predictedZ])
+            self.track.landMark = (worldPoint[0],worldPoint[1],worldPoint[2],1.0)
+            self.pub.publish(self.track)
+        else:
+            self.currentTaret = self.tracker.world2Body(self.worldTarget)
+            self.track.landMark = (0,0,0,0.0)
+            self.pub.publish(track)
+        self.currentTime = time.time()
+
         if self.lastTime == 0:
             self.rollError = 0
             self.pitchError = 0
@@ -77,7 +71,6 @@ class PIDHoverDirective(AbstractDroneDirective):
             self.pitchError = self.currentTarget[1]
 
         self.dt = (self.currentTime - self.lastTime)/1000.
-        #rospy.logwarn(str(self.dt))
         
         self.totalError = [self.totalError[0]+self.rollError*self.dt, 
                         self.totalError[1]+self.pitchError*self.dt,0]
@@ -107,7 +100,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         #rospy.logwarn("roll: "+str(self.tracker.roll))
         #rospy.logwarn("pitch: "+str(self.tracker.pitch))
         #rospy.logwarn(directiveStatus)
-        return directiveStatus, (roll, pitch, 0, 0), image, None,0, 0,None
+        return directiveStatus, (roll, pitch, 0, 0), segImage, None,0, 0,None
 
 
     # This method is called by the state machine when it considers this directive finished
