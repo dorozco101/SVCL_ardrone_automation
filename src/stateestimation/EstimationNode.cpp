@@ -259,10 +259,6 @@ void EstimationNode::trackerCb(const svcl_ardrone_automation::tracker& msg)
 	landMark = msg.landMark;
 	loc = msg.loc;
 	yaw = msg.yaw;
-	for(unsigned int i=0;i<landMark.size();i++)
-	{
-		ROS_WARN("%f", landMark[i]);
-	}
 }
 
 void EstimationNode::Loop()

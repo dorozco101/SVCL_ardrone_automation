@@ -340,7 +340,7 @@ void MapView::drawTrail()
 	boost::array<float, 2ul> yaw;
 	node->getCircle(landMark, loc, yaw);
 
-	if(yaw[1] == 1)
+	if(yaw[1] != 0)
 	{
 		//predConvert->yaw = yaw[0];
 		//double newX, double newY, double newZ, double newRoll, double newPitch, double newYaw
