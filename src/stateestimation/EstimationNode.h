@@ -54,6 +54,10 @@ private:
 	ros::Subscriber tracker_sub;
 	ros::Time lastNavStamp;
 
+	//SVCL Circle finder/tracker
+	boost::array<float, 4ul> landMark;
+	boost::array<float, 4ul> loc;
+	boost::array<float, 2ul> yaw;
 
 	// comm with ptam
 	//ros::Subscriber slam_info_sub; // ptam info (tracking quality) etc.
@@ -112,6 +116,10 @@ public:
 	void comCb(const std_msgs::StringConstPtr str);
 	void trackerCb(const svcl_ardrone_automation::tracker& msg);
 	void dynConfCb(svcl_ardrone_automation::StateestimationParamsConfig &config, uint32_t level);
+
+	//SVCL code
+	inline void getCircle(boost::array<float, 4ul> &m_landMark, boost::array<float, 4ul> &m_loc, boost::array<float, 2ul> &m_yaw)
+	{m_landMark = landMark; m_loc = loc; m_yaw = yaw}
 
 	// main pose-estimation loop
 	void Loop();

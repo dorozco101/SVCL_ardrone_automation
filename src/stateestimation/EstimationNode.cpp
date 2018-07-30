@@ -256,9 +256,9 @@ void EstimationNode::comCb(const std_msgs::StringConstPtr str)
 
 void EstimationNode::trackerCb(const svcl_ardrone_automation::tracker& msg)
 {
-    boost::array<float, 4ul> landMark = msg.landMark;
-    boost::array<float,4ul> loc = msg.loc;
-    boost::array<float,2ul> yaw = msg.yaw;
+	landMark = msg.landMark;
+	loc = msg.loc;
+	yaw = msg.yaw;
 	for(unsigned int i=0;i<landMark.size();i++)
 	{
 		ROS_WARN("%f", landMark[i]);
