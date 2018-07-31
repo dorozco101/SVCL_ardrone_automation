@@ -994,4 +994,5 @@ class ProcessVideo(object):
             cx = (2*x + w)/2
             cy = (2*y + w)/2
             return distance,(cx,cy)
+        return None, None
 

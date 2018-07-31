@@ -62,7 +62,6 @@ class PIDHoverDirective(AbstractDroneDirective):
             else:
                 self.currentTarget = self.tracker.world2Body(self.worldTarget)
             self.track.landMark = (worldPoint[0],worldPoint[1],worldPoint[2],1.0)
-            self.track.yaw = (45,1.0)
             self.pub.publish(self.track)
         else:
             self.currentTarget = self.tracker.world2Body(self.worldTarget)

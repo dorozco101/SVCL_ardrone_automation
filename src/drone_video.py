@@ -34,13 +34,8 @@ class DroneVideo(object):
 
         #Subscribe to the drones video feed
         self.video = rospy.Subscriber('/ardrone/image_raw', Image, self.ROStoCVImage )
-        #self.video = message_filters.Subscriber('/ardrone/image_raw', Image)
-
-        self.state = rospy.Subscriber('/ardrone/predictedPose',filter_state,self.callback)
-        #self.state = message_filters.Subscriber('/ardrone/camera_info',CameraInfo)
         self.moved = False
         self.currentTime = 0
-        self.tracker = Tracker()
         self.lastTime = 0
         self.window = [0,0,0,0,0,0,0,0,0]
 
@@ -51,14 +46,6 @@ class DroneVideo(object):
         self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         self.ShowVideo()
         
-    def callback(self,state):
-        self.translation = [state.x,state.y,state.z]
-        self.yaw = -state.yaw
-        self.roll = state.roll
-        self.pitch = state.pitch
-        #rospy.logwarn(str(self.x)+str(self.y)+str(self.z))
-        
-        self.tracker.update(self.roll,self.pitch,self.yaw,self.translation)
 
     def ShowVideo(self):
         

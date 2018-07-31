@@ -13,6 +13,7 @@ from os.path import expanduser
 from drone_video import DroneVideo
 from drone_controller import BasicDroneController
 from flightstats_receiver import FlightstatsReceiver
+from drone_tracker import DroneTracker
 from state_machine import StateMachine
 from processing_functions import *
 from drone_directives import *
@@ -36,7 +37,7 @@ TEST_MACHINE = 'test_machine'
 # A class that has access to the drone video feed and navdata. It uses this information to feed into
 # any one of its defined state machines, which will tell this class how to control the drone.
 # The particular state machine to use can be changed at run time.
-class DroneMaster(DroneVideo, FlightstatsReceiver): 
+class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker): 
 
 
     def __init__(self):
@@ -86,7 +87,6 @@ class DroneMaster(DroneVideo, FlightstatsReceiver):
         self.captureRound = 0.5
         self.oldBattery = -1
         self.photoDirective = None
-        self.pub = rospy.Publisher('ardrone/tracker',tracker)
         
     # Each state machine that drone mastercan use is defined here;
     # When key is pressed, define the machine to be used and switch over to it.
@@ -105,22 +105,21 @@ class DroneMaster(DroneVideo, FlightstatsReceiver):
             self.moveTime = 0.11
             self.waitTime = 0
 
-            pidDirective= PIDHoverDirective(self.tracker,[0,0.0,0])
-            pidDirective.Reset()
-            pidYawDirective= PIDYawDirective(self.tracker,[0,0.0,0],0)
-            #alg = [(pidYawDirective,8)]
-            alg = [(pidDirective,6)]
+            pidDirective1 = PIDHoverDirective(self.tracker,[0.0,0.0,0])
+            pidDirective1.Reset()
+            pidDirective2 = PIDHoverDirective(self.tracker,[0.0,1.0,0])
+            pidDirective3 = PIDHoverDirective(self.tracker,[0,1,0])
+            alg = [(pidDirective1,6)]
+            #alg = [(pidDirective3,10),(pidDirective1,10),(pidDirective2,10)]
             #rospy.logwarn("test3")
             #alg = [(HoverColorDirective("orange"),6)]
-
+            end = [(pidDirective3,1000)]
             algCycles = -1
 
 
             self.MachineSwitch( None, alg, algCycles, None, "Basic Drone State Machine")
 
-
-        # take picture
-        if key == ord('3'):
+        elif key == ord('3'):
 
             pictureName = self.pictureManager.Capture(self.cv_image)
             rospy.logwarn("Saved picture")
@@ -261,9 +260,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver):
     # Runs an iteration of the current state machine to get the next set of instructions, depending on the 
     # machine's current state.
     def ReceivedVideo(self):
-        track = tracker()
-        track.landMark = (1.0,1.0,0.0,0.0)
-        self.pub.publish(track)
+
         # checks altitude; if it is higher than allowed, then drone will land
         currHeightReg = self.flightInfo["altitude"][1]
         if currHeightReg == '?':

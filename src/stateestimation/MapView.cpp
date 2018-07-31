@@ -206,32 +206,7 @@ void MapView::Render()
 	predConvert->setPosRPY(lastFramePoseSpeed[0], lastFramePoseSpeed[1], lastFramePoseSpeed[2], lastFramePoseSpeed[3], lastFramePoseSpeed[4], lastFramePoseSpeed[5]);
 
 	//////
-	glBegin(GL_LINE_LOOP);
-	glColor3f(1,0.5,0);
-
-	boost::array<float, 4ul> landMark;
-	boost::array<float, 4ul> loc;
-	boost::array<float, 2ul> yaw;
-	node->getCircle(landMark, loc, yaw);
-
-	if(yaw[1] != 0)
-	{
-	//predConvert->yaw = yaw[0];
-		//double newX, double newY, double newZ, double newRoll, double newPitch, double newYaw
-//		predConvert->setPosRPY(predConvert->x,predConvert->y,predConvert->z,
-//				       predConvert->roll,predConvert->pitch,yaw[0]);
-//		predConvert->setPosRPY(0,0,0,0,0,0);
-		node->publishCommand("f reset");
-		ROS_WARN("Updating the yaw to %f", yaw[0]);
-	}
-
-	for(unsigned int i=0;i<20 && landMark[3]==1;i++)
-	{
-		float angle = ((2*3.14159265)*(i/20.0));
-		glVertex3f((float)0.088*cos(angle)+landMark[0], (float) 0.088*sin(angle)+landMark[1], landMark[2]);
-	}
-
-	glEnd();
+	
 	//////
 
 	plotCam(predConvert->droneToGlobal,true,5.0f,0.2f,1);
@@ -360,7 +335,39 @@ void MapView::drawTrail()
 	}
 
 	glEnd();
+///////
+    boost::array<float, 4ul> landMark;
+	boost::array<float, 4ul> loc;
+	boost::array<float, 2ul> yaw;
+	node->getCircle(landMark, loc, yaw);
+    if (landMark[0] != 0){
+    glBegin(GL_LINE_LOOP);
+	glColor3f(1,0.5,0);
 
+
+	if(yaw[1] != 0)
+	{
+	//predConvert->yaw = yaw[0];
+		//double newX, double newY, double newZ, double newRoll, double newPitch, double newYaw
+		//predConvert->setPosRPY(predConvert->x,predConvert->y,predConvert->z,
+				      // predConvert->roll,predConvert->pitch,yaw[0]);
+		//predConvert->setPosRPY(1,1,1,0,0,0);
+        //filter->reset();
+		//ptamWrapper->Reset();
+		//clearTrail = true;
+		//node->publishCommand("f reset");
+		ROS_WARN("Updating the yaw to %f", yaw[0]);
+	}
+
+	for(unsigned int i=0;i<20 && landMark[3]!=0;i++)
+	{
+		float angle = ((2*3.14159265)*(i/20.0));
+		glVertex3f((float)0.088*cos(angle)+landMark[0], (float) 0.088*sin(angle)+landMark[1], landMark[2]);
+	}
+
+	glEnd();
+}
+/////
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
