@@ -216,11 +216,12 @@ void MapView::Render()
 
 	if(yaw[1] != 0)
 	{
-		//predConvert->yaw = yaw[0];
+	//predConvert->yaw = yaw[0];
 		//double newX, double newY, double newZ, double newRoll, double newPitch, double newYaw
-		predConvert->setPosRPY(predConvert->x,predConvert->y,predConvert->z,
-				       predConvert->roll,predConvert->pitch,yaw[0]);
+//		predConvert->setPosRPY(predConvert->x,predConvert->y,predConvert->z,
+//				       predConvert->roll,predConvert->pitch,yaw[0]);
 //		predConvert->setPosRPY(0,0,0,0,0,0);
+		node->publishCommand("f reset");
 		ROS_WARN("Updating the yaw to %f", yaw[0]);
 	}
 
