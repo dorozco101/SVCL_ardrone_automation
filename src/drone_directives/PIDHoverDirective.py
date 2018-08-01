@@ -59,20 +59,18 @@ class PIDHoverDirective(AbstractDroneDirective):
             tape = self.tracker.camera2Body([x,y,-predictedZ])
             worldPoint = self.tracker.camera2World([x,y,-predictedZ])
             if ((worldPoint[0]-self.worldTarget[0])**2+(worldPoint[1]-self.worldTarget[1])**2)**(0.5) < 0.15:
-                self.currentTarget = tape
+                #self.currentTarget = tape
                 self.buff[:,99] = np.asarray([worldPoint[0,0],worldPoint[1,0],worldPoint[2,0]])
                 for i in range(99):
                     self.buff[:,i] = self.buff[:,i+1]
                 self.worldTarget = np.mean(self.buff,1)
-                #self.currentTarget = self.tracker.world2Body(self.worldTarget)
-            else:
-                self.currentTarget = self.tracker.world2Body(self.worldTarget)
-            self.track.landMark = (self.worldTarget[0],self.worldTarget[1],self.worldTarget[2],1.0)
+
+            self.track.landMark = (self.worldTarget[0],self.worldTarget[1],0.0,1.0)
             self.pub.publish(self.track)
         else:
-            self.currentTarget = self.tracker.world2Body(self.worldTarget)
             self.track.landMark = (0,0,0,0.0)
 
+        self.currentTarget = self.tracker.world2Body(self.worldTarget)
         self.currentTime = time.time()
         
         if self.lastTime == 0:
@@ -91,7 +89,6 @@ class PIDHoverDirective(AbstractDroneDirective):
         else:
             self.track.loc = (1,1,0,1.0)
             self.pub.publish(self.track)
-            rospy.logwarn("not reseting "+str(time1))
 
         self.totalError = [self.totalError[0]+self.rollError*self.dt, 
                         self.totalError[1]+self.pitchError*self.dt,0]

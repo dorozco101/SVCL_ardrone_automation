@@ -264,7 +264,7 @@ void EstimationNode::trackerCb(const svcl_ardrone_automation::tracker& msg)
 	{
         filter->reset(loc[0],loc[1],loc[2],yaw[0]);
 	}
-    else if(loc[3] == 0){ //keep yaw same
+    else if(loc[3] != 0){ //keep yaw same
         filter->reset(loc[0],loc[1],loc[2],s.yaw);
     }
     else if(yaw[1] !=0){//keep x,y,z same
