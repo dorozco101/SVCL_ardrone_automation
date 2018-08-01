@@ -9,7 +9,7 @@ from processing_functions.pid_controller import PIDController
 from os.path import expanduser
 from std_msgs.msg import Int32, Float32
 from svcl_ardrone_automation.msg import *
-
+import numpy as np
 # describes instruction on what the drone should do in order to hover over 
 # a specified color underneath it
 class PIDHoverDirective(AbstractDroneDirective):
@@ -20,7 +20,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         
         #self.Kp,self.Ki,self.Kd = 0.11,0.0,0.0004
         #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005 #best
-        self.Kp,self.Ki,self.Kd = 0.1,10.0,0.0004
+        self.Kp,self.Ki,self.Kd = 0.11,1.0,0.0006
 
         self.tracker = poseTracker
         self.target = target
@@ -31,7 +31,9 @@ class PIDHoverDirective(AbstractDroneDirective):
         self.centerx = 640/2.0
         self.pub = rospy.Publisher('ardrone/tracker',tracker)
         self.track = tracker()
-
+        self.platform = [0,0,0]
+        self.buff = np.repeat(np.asarray([self.worldTarget]).T,100,axis=1)
+        
     # given the image and navdata of the drone, returns the following in order:
     #
     # A directive status int:
@@ -58,18 +60,21 @@ class PIDHoverDirective(AbstractDroneDirective):
             worldPoint = self.tracker.camera2World([x,y,-predictedZ])
             if ((worldPoint[0]-self.worldTarget[0])**2+(worldPoint[1]-self.worldTarget[1])**2)**(0.5) < 0.15:
                 self.currentTarget = tape
+                self.buff[:,99] = np.asarray([worldPoint[0,0],worldPoint[1,0],worldPoint[2,0]])
+                for i in range(99):
+                    self.buff[:,i] = self.buff[:,i+1]
+                self.worldTarget = np.mean(self.buff,1)
                 #self.currentTarget = self.tracker.world2Body(self.worldTarget)
             else:
                 self.currentTarget = self.tracker.world2Body(self.worldTarget)
-            self.track.landMark = (worldPoint[0],worldPoint[1],worldPoint[2],1.0)
+            self.track.landMark = (self.worldTarget[0],self.worldTarget[1],self.worldTarget[2],1.0)
             self.pub.publish(self.track)
         else:
             self.currentTarget = self.tracker.world2Body(self.worldTarget)
             self.track.landMark = (0,0,0,0.0)
-            self.pub.publish(self.track)
 
         self.currentTime = time.time()
-
+        
         if self.lastTime == 0:
             self.rollError = 0
             self.pitchError = 0
@@ -78,7 +83,16 @@ class PIDHoverDirective(AbstractDroneDirective):
             self.pitchError = self.currentTarget[1]
 
         self.dt = (self.currentTime - self.lastTime)/1000.
-        
+
+        time1 = int(self.currentTime) %3
+        if time1 > 1:
+            self.track.loc = (1,1,0,0.0)
+            self.pub.publish(self.track)
+        else:
+            self.track.loc = (1,1,0,1.0)
+            self.pub.publish(self.track)
+            rospy.logwarn("not reseting "+str(time1))
+
         self.totalError = [self.totalError[0]+self.rollError*self.dt, 
                         self.totalError[1]+self.pitchError*self.dt,0]
         pRoll = -self.Kp*(self.rollError)
@@ -106,7 +120,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         pitch = -1 if pitch<-1 else pitch
         #rospy.logwarn("roll: "+str(self.tracker.roll))
         #rospy.logwarn("pitch: "+str(self.tracker.pitch))
-        #rospy.logwarn(directiveStatus)
+        rospy.logwarn(directiveStatus)
         return directiveStatus, (roll, pitch, 0, 0), segImage, None,0, 0,None
 
 

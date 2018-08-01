@@ -38,7 +38,7 @@ class DroneVideo(object):
         self.currentTime = 0
         self.lastTime = 0
         self.window = [0,0,0,0,0,0,0,0,0]
-
+        self.enableEmergency = False
     def ROStoCVImage(self,data):
         
         #convert ROS Image to OpenCV Image

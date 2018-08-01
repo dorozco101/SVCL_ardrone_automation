@@ -137,7 +137,48 @@ void DroneKalmanFilter::setPing(unsigned int navPing, unsigned int vidPing)
 void DroneKalmanFilter::reset()
 {
 	// init filter with pose 0 (var 0) and speed 0 (var large).
-	x = y = z = yaw = PVFilter(0);
+	y = z = x = PVFilter(0);
+    yaw = PVFilter(0);
+
+	roll = pitch = PFilter(0);
+	lastIMU_XYZ_ID = lastIMU_RPY_ID = -1;
+	predictedUpToDroneTime = 0;
+	last_z_heightDiff = 0;
+	scalePairsIn = scalePairsOut = 0;
+
+	// set statistic parameters to zero
+	numGoodIMUObservations = 0;
+
+	// set last times to 0, indicating that there was no prev. package.
+	lastIMU_XYZ_dronetime = lastIMU_RPY_dronetime = 0;
+	lastIMU_dronetime = 0;
+
+	// clear PTAM
+	clearPTAM();
+
+	// clear IMU-queus
+	navdataQueue->clear();
+	velQueue->clear();
+	
+	predictdUpToTimestamp = getMS(ros::Time::now());
+	predictedUpToTotal = -1;
+
+	baselineZ_Filter = baselineZ_IMU = -999999;
+	baselinesYValid = false;
+
+
+	node->publishCommand("u l EKF has been reset to zero.");
+}
+
+
+
+void DroneKalmanFilter::reset(int xNew,int yNew,int zNew,int yawNew)
+{
+	// init filter with pose 0 (var 0) and speed 0 (var large).
+	yaw = PVFilter(yawNew);
+    x = PVFilter(xNew);
+    y = PVFilter(yNew);
+    z = PVFilter(zNew);
 	roll = pitch = PFilter(0);
 	lastIMU_XYZ_ID = lastIMU_RPY_ID = -1;
 	predictedUpToDroneTime = 0;
