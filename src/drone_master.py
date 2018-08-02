@@ -111,8 +111,8 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
             pidDirective3 = PIDHoverDirective(self.tracker,[0.5,0.8,0])
             pidDirective2.Reset()
             pidDirective3.Reset()
-            #alg = [(pidDirective1,6)]
-            alg = [(pidDirective1,10),(pidDirective2,10),(pidDirective3,10)]
+            alg = [(pidDirective1,6)]
+            #alg = [(pidDirective1,10),(pidDirective2,10),(pidDirective3,10)]
             #rospy.logwarn("test3")
             #alg = [(HoverColorDirective("orange"),6)]
             end = [(pidDirective3,1000)]

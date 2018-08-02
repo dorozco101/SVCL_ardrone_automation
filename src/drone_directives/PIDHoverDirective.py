@@ -16,7 +16,7 @@ class PIDHoverDirective(AbstractDroneDirective):
     
     # sets up this directive
     # platformColor: color to hover over. Altitude is maintained
-    def __init__(self, poseTracker,target,waitDist=0.1):
+    def __init__(self, poseTracker,target,waitDist=0.05):
         
         #self.Kp,self.Ki,self.Kd = 0.11,0.0,0.0004
         #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005 #best
@@ -69,6 +69,7 @@ class PIDHoverDirective(AbstractDroneDirective):
             self.pub.publish(self.track)
         else:
             self.track.landMark = (0,0,0,0.0)
+            self.pub.publish(self.track)
 
         self.currentTarget = self.tracker.world2Body(self.worldTarget)
         self.currentTime = time.time()
@@ -81,14 +82,6 @@ class PIDHoverDirective(AbstractDroneDirective):
             self.pitchError = self.currentTarget[1]
 
         self.dt = (self.currentTime - self.lastTime)/1000.
-
-        time1 = int(self.currentTime) %3
-        if time1 > 1:
-            self.track.loc = (1,1,0,0.0)
-            self.pub.publish(self.track)
-        else:
-            self.track.loc = (1,1,0,1.0)
-            self.pub.publish(self.track)
 
         self.totalError = [self.totalError[0]+self.rollError*self.dt, 
                         self.totalError[1]+self.pitchError*self.dt,0]
