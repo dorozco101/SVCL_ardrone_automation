@@ -74,7 +74,7 @@ void MapView::stopSystem()
 void MapView::run()
 {
 	sleep(1000);
-    myGLWindow = new GLWindow2(CVD::ImageRef(640,480), "PTAM Drone Map View",this);
+	myGLWindow = new GLWindow2(CVD::ImageRef(640,480), "PTAM Drone Map View",this);
 	myGLWindow->set_title("PTAM Drone Map View");
 
 	while(keepRunning)
@@ -93,8 +93,8 @@ void MapView::Render()
 	// get new pose.
 	pthread_mutex_lock(&filter->filter_CS);
 	lastFramePoseSpeed = filter->getCurrentPoseSpeedAsVec();	// Note: this is maybe an old pose, but max. one frame old = 50ms = not noticable.
-    lastFramePoseSpeed[0]*=1.75;
-    lastFramePoseSpeed[1]*=1.4;
+	lastFramePoseSpeed[0]*=1.75;
+	lastFramePoseSpeed[1]*=1.4;
 	pthread_mutex_unlock(&filter->filter_CS);
 
 	
@@ -207,10 +207,6 @@ void MapView::Render()
 	// real in opaque
 	predConvert->setPosRPY(lastFramePoseSpeed[0], lastFramePoseSpeed[1], lastFramePoseSpeed[2], lastFramePoseSpeed[3], lastFramePoseSpeed[4], lastFramePoseSpeed[5]);
 
-	//////
-	
-	//////
-
 	plotCam(predConvert->droneToGlobal,true,5.0f,0.2f,1);
 
 
@@ -222,55 +218,55 @@ void MapView::Render()
 
 	if(drawUI == UI_DEBUG)
 	{
-		snprintf(charBuf,1000,"Pose:              ");
-		snprintf(charBuf+10,800, "x: %.2f                          ",lastFramePoseSpeed[0]);
-		snprintf(charBuf+20,800, "y: %.2f                          ",lastFramePoseSpeed[1]);
-		snprintf(charBuf+30,800, "z: %.2f                          ",lastFramePoseSpeed[2]);
-		snprintf(charBuf+40,800, "r: %.2f                          ",lastFramePoseSpeed[3]);
-		snprintf(charBuf+50,800, "p: %.2f                          ",lastFramePoseSpeed[4]);
-		snprintf(charBuf+60,800, "y: %.2f                          ",lastFramePoseSpeed[5]);
-		snprintf(charBuf+70,800, "vx: %.2f                          ",lastFramePoseSpeed[6]);
-		snprintf(charBuf+80,800, "vy: %.2f                          ",lastFramePoseSpeed[7]);
-		snprintf(charBuf+90,800, "vz: %.2f                          ",lastFramePoseSpeed[8]);
+		snprintf(charBuf,1000,"Pose:			  ");
+		snprintf(charBuf+10,800, "x: %.2f						  ",lastFramePoseSpeed[0]);
+		snprintf(charBuf+20,800, "y: %.2f						  ",lastFramePoseSpeed[1]);
+		snprintf(charBuf+30,800, "z: %.2f						  ",lastFramePoseSpeed[2]);
+		snprintf(charBuf+40,800, "r: %.2f						  ",lastFramePoseSpeed[3]);
+		snprintf(charBuf+50,800, "p: %.2f						  ",lastFramePoseSpeed[4]);
+		snprintf(charBuf+60,800, "y: %.2f						  ",lastFramePoseSpeed[5]);
+		snprintf(charBuf+70,800, "vx: %.2f						  ",lastFramePoseSpeed[6]);
+		snprintf(charBuf+80,800, "vy: %.2f						  ",lastFramePoseSpeed[7]);
+		snprintf(charBuf+90,800, "vz: %.2f						  ",lastFramePoseSpeed[8]);
 		snprintf(charBuf+100,800, "vy: %.2f",lastFramePoseSpeed[9]);
 		msg += charBuf;
 	
 
-		snprintf(charBuf,1000,"\nSync:              ");
-		snprintf(charBuf+10,800, "ox: %.2f                          ",of[0]);
-		snprintf(charBuf+20,800, "oy: %.2f                          ",of[1]);
-		snprintf(charBuf+30,800, "oz: %.2f                          ",of[2]);
-		snprintf(charBuf+40,800, "or: %.2f                          ",of[3]);
-		snprintf(charBuf+50,800, "op: %.2f                          ",of[4]);
-		snprintf(charBuf+60,800, "oy: %.2f                          ",of[5]);
-		snprintf(charBuf+70,800, "Sx: %.2f                          ",sc[0]);
-		snprintf(charBuf+80,800, "Sy: %.2f                          ",sc[1]);
+		snprintf(charBuf,1000,"\nSync:			  ");
+		snprintf(charBuf+10,800, "ox: %.2f						  ",of[0]);
+		snprintf(charBuf+20,800, "oy: %.2f						  ",of[1]);
+		snprintf(charBuf+30,800, "oz: %.2f						  ",of[2]);
+		snprintf(charBuf+40,800, "or: %.2f						  ",of[3]);
+		snprintf(charBuf+50,800, "op: %.2f						  ",of[4]);
+		snprintf(charBuf+60,800, "oy: %.2f						  ",of[5]);
+		snprintf(charBuf+70,800, "Sx: %.2f						  ",sc[0]);
+		snprintf(charBuf+80,800, "Sy: %.2f						  ",sc[1]);
 		snprintf(charBuf+90,800, "Sz: %.2f",sc[2]);
 		msg += charBuf;
 
 
-		snprintf(charBuf,1000,"\nStDvs:                 ");
-		snprintf(charBuf+10,800, "x: %.2f                          ",std::sqrt((double)lastFramePoseSpeed[0]));
-		snprintf(charBuf+20,800, "y: %.2f                          ",std::sqrt((double)lastFramePoseSpeed[1]));
-		snprintf(charBuf+30,800, "z: %.2f                          ",std::sqrt((double)lastFramePoseSpeed[2]));
-		snprintf(charBuf+40,800, "r: %.2f                          ",std::sqrt((double)lastFramePoseSpeed[3]));
-		snprintf(charBuf+50,800, "p: %.2f                          ",std::sqrt((double)lastFramePoseSpeed[4]));
-		snprintf(charBuf+60,800, "y: %.2f                          ",std::sqrt((double)lastFramePoseSpeed[5]));
-		snprintf(charBuf+70,800, "vx: %.2f                          ",std::sqrt((double)lastFramePoseSpeed[6]));
-		snprintf(charBuf+80,800, "vy: %.2f                          ",std::sqrt((double)lastFramePoseSpeed[7]));
-		snprintf(charBuf+90,800, "vz: %.2f                          ",std::sqrt((double)lastFramePoseSpeed[8]));
+		snprintf(charBuf,1000,"\nStDvs:				 ");
+		snprintf(charBuf+10,800, "x: %.2f						  ",std::sqrt((double)lastFramePoseSpeed[0]));
+		snprintf(charBuf+20,800, "y: %.2f						  ",std::sqrt((double)lastFramePoseSpeed[1]));
+		snprintf(charBuf+30,800, "z: %.2f						  ",std::sqrt((double)lastFramePoseSpeed[2]));
+		snprintf(charBuf+40,800, "r: %.2f						  ",std::sqrt((double)lastFramePoseSpeed[3]));
+		snprintf(charBuf+50,800, "p: %.2f						  ",std::sqrt((double)lastFramePoseSpeed[4]));
+		snprintf(charBuf+60,800, "y: %.2f						  ",std::sqrt((double)lastFramePoseSpeed[5]));
+		snprintf(charBuf+70,800, "vx: %.2f						  ",std::sqrt((double)lastFramePoseSpeed[6]));
+		snprintf(charBuf+80,800, "vy: %.2f						  ",std::sqrt((double)lastFramePoseSpeed[7]));
+		snprintf(charBuf+90,800, "vz: %.2f						  ",std::sqrt((double)lastFramePoseSpeed[8]));
 		snprintf(charBuf+100,800, "vy: %.2f",std::sqrt((double)lastFramePoseSpeed[9]));
 		msg += charBuf;
 	}
 	else
 	{
-		snprintf(charBuf,1000,"Drone Pose:             ");
-		snprintf(charBuf+13,800, "xyz=(%.2f,                          ",lastFramePoseSpeed[0]);
-		snprintf(charBuf+25,800, "%.2f,                          ",lastFramePoseSpeed[1]);
-		snprintf(charBuf+32,800, "%.2f),                      ",lastFramePoseSpeed[2]);
-		snprintf(charBuf+42,800, "rpy=(%.2f,                 ",lastFramePoseSpeed[3]);
-		snprintf(charBuf+54,800, "%.2f,                          ",lastFramePoseSpeed[4]);
-		snprintf(charBuf+61,800, "%.2f)                          ",lastFramePoseSpeed[5]);
+		snprintf(charBuf,1000,"Drone Pose:			 ");
+		snprintf(charBuf+13,800, "xyz=(%.2f,						  ",lastFramePoseSpeed[0]);
+		snprintf(charBuf+25,800, "%.2f,						  ",lastFramePoseSpeed[1]);
+		snprintf(charBuf+32,800, "%.2f),					  ",lastFramePoseSpeed[2]);
+		snprintf(charBuf+42,800, "rpy=(%.2f,				 ",lastFramePoseSpeed[3]);
+		snprintf(charBuf+54,800, "%.2f,						  ",lastFramePoseSpeed[4]);
+		snprintf(charBuf+61,800, "%.2f)						  ",lastFramePoseSpeed[5]);
 		msg += charBuf;
 	}
 	
@@ -338,40 +334,50 @@ void MapView::drawTrail()
 
 	glEnd();
 ///////
-    boost::array<float, 4ul> landMark;
+
+	//Always draw these 8 circles
+	//draw the 8 points around the circle. (Right most going counter clockwise.)
+	float circleX[8] = {1.12, 0.80,    0, -0.81, -1.12, -0.77, 0,      0.76};
+	float circleY[8] = {   0, 0.78, 1.14,  0.78,	 0, -0.76, -1.12, -0.78};
+
+	for(unsigned int i=0;i<8;i++)//for each circle
+	{
+		glBegin(GL_LINE_LOOP);
+		//glColor3f(0.2,0.3,0.8);
+		glColor3f(1,0.5,0);
+		for(unsigned int j=0;j<20;j++)//for each vertex in circle
+		{
+			float angle = ((2*3.14159265)*(j/20.0));
+			glVertex3f((float)0.088*cos(angle)+circleX[i], (float) 0.088*sin(angle)+circleY[i], 0);
+		}
+		glEnd();
+	}
+
+	boost::array<float, 4ul> landMark;
 	boost::array<float, 4ul> loc;
 	boost::array<float, 2ul> yaw;
 	node->getCircle(landMark, loc, yaw);
-    if (landMark[0] != 0){
-    glBegin(GL_POLYGON);
-	glColor3f(1,0.5,0);
-	
-	for(unsigned int i=0;i<20 && landMark[3]!=0;i++)
+	if (landMark[3] != 0)//Update Landmark 
 	{
-		float angle = ((2*3.14159265)*(i/20.0));
-		glVertex3f((float)0.088*cos(angle)+landMark[0], (float) 0.088*sin(angle)+landMark[1], landMark[2]);
+		glBegin(GL_POLYGON);
+		glColor3f(1,0.5,0);
+	
+		for(unsigned int i=0;i<20 && landMark[3]!=0;i++)
+		{
+			float angle = ((2*3.14159265)*(i/20.0));
+			glVertex3f((float)0.088*cos(angle)+landMark[0], (float) 0.088*sin(angle)+landMark[1], landMark[2]);
+		}
+
+		glEnd();
 	}
-
-	glEnd();
-
-    //draw the 8 points around the circle. (Right most going counter clockwise.)
-    float circleX[8] = {1.12, .80,   0, -.81, -1.12, -.77,    0,  .76};
-    float circleY[8] = {0  , .78, 1.14,  .78,    0, -.76, -1.12, -.78};
-
-    for(unsigned int i=0;i<8;i++)//for each circle
-    {
-        glBegin(GL_LINE_LOOP);
-        //glColor3f(0.2,0.3,0.8);
-        glColor3f(1,0.5,0);
-        for(unsigned int j=0;j<20;j++)//for each vertex in circle
-	    {
-		    float angle = ((2*3.14159265)*(j/20.0));
-		    glVertex3f((float)0.088*cos(angle)+circleX[i], (float) 0.088*sin(angle)+circleY[i], 0);
-	    }
-        glEnd();
-    }
-}
-/////
+	if (loc[3] != 0 && yaw[1] != 0)//Update Drone Location.
+	{
+		filter->reset(loc[0], loc[1], loc[2], yaw[0]);
+	}
+	else if(loc[3] !=0)//Update everything except yaw.
+	{
+	}
+	//////
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();

@@ -343,8 +343,9 @@ public:
 
 	// resets everything to zero.
 	void reset();
-    void reset(int xNew,int yNew,int zNew,int yawNew);
-
+	void reset(float xNew, float yNew, float zNew, float yawNew);
+	void reset(float xNew, float yNew, float zNew);
+	void reset(float yawNew);
 
 	// resets everything to do with PTAM to zero (call if tracking continues, but PTAM tracking is reset)
 	void clearPTAM();
