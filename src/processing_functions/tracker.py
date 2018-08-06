@@ -128,9 +128,13 @@ class Tracker(object):
         v[:3,0] = np.asarray(bodyVector)
         return np.dot(self.body2CameraT,v)[:3]
 
-    def transform(self,transform,vector):
+    def tape2World(self,translation,yaw,vector):
         v = np.ones([4,1])
+        t = np.ones([4,1])
         v[:3,0] = np.asarray(vector)
+        t[:3,0] = np.asarray(translation)
+        translation = np.dot(self.body2WorldTrans(yaw,np.asarray([0,0,0])),t)[:3,0]
+        transform = self.body2WorldTrans(0,-translation)
         return np.dot(transform,v)[:3]
 
 

@@ -20,8 +20,9 @@ class PIDHoverDirective(AbstractDroneDirective):
         
         #self.Kp,self.Ki,self.Kd = 0.11,0.0,0.0004
         #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005 #best
-        self.Kp,self.Ki,self.Kd = 0.11,1.0,0.0006
-
+        self.Kp,self.Ki,self.Kd = 0.11,0.0,0.0004
+        self.moveTime = 0.2
+        self.waitTime = 0
         self.tracker = poseTracker
         self.target = target
         self.waitDist = waitDist
@@ -33,7 +34,13 @@ class PIDHoverDirective(AbstractDroneDirective):
         self.track = tracker()
         self.platform = [0,0,0]
         self.buff = np.repeat(np.asarray([self.worldTarget]).T,100,axis=1)
-        
+        self.tapeCounter = 0
+        self.tapeLocation = None
+
+    def distance(self,x,y):
+        dist = (x[0]-y[0])**2+(x[1]-y[1])**2
+        dist = dist**(0.5)
+        return dist
     # given the image and navdata of the drone, returns the following in order:
     #
     # A directive status int:
@@ -48,8 +55,9 @@ class PIDHoverDirective(AbstractDroneDirective):
 
         segImage, radius, center = self.processVideo.RecognizeShape(image, 'orange',(None,None))
         self.yaw = self.tracker.yaw
-        #radius = None
-        #segImage = image
+        loc = (0,0,0,0)
+        #circle detection
+        rospy.logwarn("x: "+str(self.tracker.translation[0])+" y: "+str(self.tracker.translation[1]))
         if radius != None:
             predictedZ = self.processVideo.CalcDistanceNew(88.0, radius* 2)/1000.0
             scale = (88.0/(radius*2))/1000.0 #meters/pixel
@@ -58,19 +66,31 @@ class PIDHoverDirective(AbstractDroneDirective):
             
             tape = self.tracker.camera2Body([x,y,-predictedZ])
             worldPoint = self.tracker.camera2World([x,y,-predictedZ])
-            if ((worldPoint[0]-self.worldTarget[0])**2+(worldPoint[1]-self.worldTarget[1])**2)**(0.5) < 0.15:
-                #self.currentTarget = tape
-                self.buff[:,99] = np.asarray([worldPoint[0,0],worldPoint[1,0],worldPoint[2,0]])
+            
+            if ( self.tapeCounter < 100 and self.distance(worldPoint,self.worldTarget) < 0.25):
+                self.tapeCounter+=1
+                rospy.logwarn("Entering if " +str(self.tapeCounter))
+                if self.tapeCounter == 100:
+                   self.tapeLocation = self.worldTarget
                 for i in range(99):
                     self.buff[:,i] = self.buff[:,i+1]
+                self.buff[:,99] = np.asarray([worldPoint[0,0],worldPoint[1,0],worldPoint[2,0]])
                 self.worldTarget = np.mean(self.buff,1)
 
+            if self.tapeLocation != None:
+                dist = self.distance(worldPoint,self.tapeLocation)
+                if dist < 0.35 and dist > 0.15:
+                    loc = self.tracker.tape2World([x,y,-predictedZ],self.yaw,[self.tapeLocation[0],self.tapeLocation[1],0])
+                    loc = (loc[0],loc[1],loc[2],1.0)
+                    rospy.logwarn("Fixing location to ..."+str(loc))
+            
             self.track.landMark = (self.worldTarget[0],self.worldTarget[1],0.0,1.0)
-            self.pub.publish(self.track)
         else:
             self.track.landMark = (0,0,0,0.0)
-            self.pub.publish(self.track)
-
+        rospy.logwarn("world target: " + str(self.worldTarget))
+        self.track.landMark = (self.worldTarget[0],self.worldTarget[1],0.0,1.0)
+        self.track.loc = loc
+        self.pub.publish(self.track)
         self.currentTarget = self.tracker.world2Body(self.worldTarget)
         self.currentTime = time.time()
         
@@ -110,8 +130,8 @@ class PIDHoverDirective(AbstractDroneDirective):
         pitch = -1 if pitch<-1 else pitch
         #rospy.logwarn("roll: "+str(self.tracker.roll))
         #rospy.logwarn("pitch: "+str(self.tracker.pitch))
-        rospy.logwarn(directiveStatus)
-        return directiveStatus, (roll, pitch, 0, 0), segImage, None,0, 0,None
+        #rospy.logwarn(directiveStatus)
+        return directiveStatus, (roll, pitch, 0, 0), segImage, None,self.moveTime, self.waitTime,None
 
 
     # This method is called by the state machine when it considers this directive finished

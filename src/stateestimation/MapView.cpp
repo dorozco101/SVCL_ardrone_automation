@@ -93,6 +93,8 @@ void MapView::Render()
 	// get new pose.
 	pthread_mutex_lock(&filter->filter_CS);
 	lastFramePoseSpeed = filter->getCurrentPoseSpeedAsVec();	// Note: this is maybe an old pose, but max. one frame old = 50ms = not noticable.
+    lastFramePoseSpeed[0]*=1.75;
+    lastFramePoseSpeed[1]*=1.4;
 	pthread_mutex_unlock(&filter->filter_CS);
 
 	
@@ -343,8 +345,6 @@ void MapView::drawTrail()
     if (landMark[0] != 0){
     glBegin(GL_POLYGON);
 	glColor3f(1,0.5,0);
-
-
 	
 	for(unsigned int i=0;i<20 && landMark[3]!=0;i++)
 	{
@@ -353,6 +353,23 @@ void MapView::drawTrail()
 	}
 
 	glEnd();
+
+    //draw the 8 points around the circle. (Right most going counter clockwise.)
+    float circleX[8] = {1.12, .80,   0, -.81, -1.12, -.77,    0,  .76};
+    float circleY[8] = {0  , .78, 1.14,  .78,    0, -.76, -1.12, -.78};
+
+    for(unsigned int i=0;i<8;i++)//for each circle
+    {
+        glBegin(GL_LINE_LOOP);
+        //glColor3f(0.2,0.3,0.8);
+        glColor3f(1,0.5,0);
+        for(unsigned int j=0;j<20;j++)//for each vertex in circle
+	    {
+		    float angle = ((2*3.14159265)*(j/20.0));
+		    glVertex3f((float)0.088*cos(angle)+circleX[i], (float) 0.088*sin(angle)+circleY[i], 0);
+	    }
+        glEnd();
+    }
 }
 /////
 	glDisable(GL_DEPTH_TEST);
@@ -636,8 +653,8 @@ bool MapView::handleCommand(std::string s)
 	// f reset:
 	// resets filter pos and PTAM.
 	if(s.length() == 5 && s.substr(0,5) == "reset")
-	{
-		filter->reset();
+	{   
+		filter->reset(0,0,predConvert->z,0);
 		ptamWrapper->Reset();
 		clearTrail = true;
 	}

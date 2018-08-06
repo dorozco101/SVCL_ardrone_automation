@@ -137,8 +137,7 @@ void DroneKalmanFilter::setPing(unsigned int navPing, unsigned int vidPing)
 void DroneKalmanFilter::reset()
 {
 	// init filter with pose 0 (var 0) and speed 0 (var large).
-	y = z = x = PVFilter(0);
-    yaw = PVFilter(0);
+	y = z = x = yaw = PVFilter(0);
 
 	roll = pitch = PFilter(0);
 	lastIMU_XYZ_ID = lastIMU_RPY_ID = -1;
@@ -265,8 +264,8 @@ void DroneKalmanFilter::predictInternal(geometry_msgs::Twist activeControlInfo, 
 	double forceY = - sin(yawRad) * sin(rollRad) * cos(pitchRad) - cos(yawRad) * sin(pitchRad);
 	
 
-	double vx_gain = tsSeconds * c1 * (c2*forceX - x.state[1]);
-	double vy_gain = tsSeconds * c1 * (c2*forceY - y.state[1]);
+	double vx_gain = 2*tsSeconds * c1 * (c2*forceX - x.state[1]);
+	double vy_gain = 2*tsSeconds * c1 * (c2*forceY - y.state[1]);
 	double vz_gain = tsSeconds * c7 * (c8*activeControlInfo.linear.z*(activeControlInfo.linear.z < 0 ? 2 : 1) - z.state[1]);
 
 	lastVXGain = vx_gain;
