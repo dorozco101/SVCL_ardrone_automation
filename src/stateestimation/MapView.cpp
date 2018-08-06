@@ -339,6 +339,8 @@ void MapView::drawTrail()
 	//draw the 8 points around the circle. (Right most going counter clockwise.)
 	float circleX[8] = {1.12, 0.80,    0, -0.81, -1.12, -0.77, 0,      0.76};
 	float circleY[8] = {   0, 0.78, 1.14,  0.78,	 0, -0.76, -1.12, -0.78};
+	int closestCircleIndex;
+	float closestDistance = 100000;
 
 	for(unsigned int i=0;i<8;i++)//for each circle
 	{
@@ -374,8 +376,13 @@ void MapView::drawTrail()
 	{
 		filter->reset(loc[0], loc[1], loc[2], yaw[0]);
 	}
-	else if(loc[3] !=0)//Update everything except yaw.
+	else if(loc[3] != 0)//Update everything except yaw.
 	{
+		filter->reset(loc[0], loc[1], loc[2]);
+	}
+	else if(yaw[1] != 0)
+	{
+		filter->reset(yaw[0]);
 	}
 	//////
 	glDisable(GL_DEPTH_TEST);

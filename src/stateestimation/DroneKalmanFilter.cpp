@@ -1,4 +1,4 @@
-= /**
+/**
  *  This file is part of tum_ardrone.
  *
  *  Copyright 2012 Jakob Engel <jajuengel@gmail.com> (Technical University of Munich)
@@ -139,17 +139,17 @@ void DroneKalmanFilter::reset()
 	reset(0, 0, 0, 0);
 }
 
-void reset(float xNew, float yNew, float zNew)
+void DroneKalmanFilter::reset(float xNew, float yNew, float zNew)
 {
-	reset(xNew, yNew, zNew, yaw);
+	reset(xNew, yNew, zNew, yaw.state[0]);
 }
 
-void reset(float yawNew)
+void DroneKalmanFilter::reset(float yawNew)
 {
-	reset(x, y, z, yawNew);
+	reset(x.state[0], y.state[0], z.state[0], yawNew);
 }
 
-void DroneKalmanFilter::reset(int xNew, int yNew, int zNew, int yawNew)
+void DroneKalmanFilter::reset(float xNew, float yNew, float zNew, float yawNew)
 {
 	// init filter with pose 0 (var 0) and speed 0 (var large).
 	yaw = PVFilter(yawNew);
