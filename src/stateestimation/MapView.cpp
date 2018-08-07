@@ -93,8 +93,8 @@ void MapView::Render()
 	// get new pose.
 	pthread_mutex_lock(&filter->filter_CS);
 	lastFramePoseSpeed = filter->getCurrentPoseSpeedAsVec();	// Note: this is maybe an old pose, but max. one frame old = 50ms = not noticable.
-	lastFramePoseSpeed[0]*=1.75;
-	lastFramePoseSpeed[1]*=1.4;
+	//lastFramePoseSpeed[0]*=1.75;
+	//lastFramePoseSpeed[1]*=1.4;
 	pthread_mutex_unlock(&filter->filter_CS);
 
 	
