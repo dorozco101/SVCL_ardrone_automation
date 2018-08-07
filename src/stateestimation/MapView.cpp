@@ -345,22 +345,25 @@ void MapView::drawTrail()
 
 	for(unsigned int i=0;i<8;i++)//for each circle
 	{
-		glBegin(GL_LINE_LOOP);
-		//glColor3f(0.2,0.3,0.8);
-		
-        //
-
 		if(closestDistance > (sqrt(pow(circleX[i]-predConvert->x,2)+pow(circleY[i]-predConvert->y,2))))//find shortest distance
 		{
 			closestDistance = sqrt(pow(circleX[i]-predConvert->x,2)+pow(circleY[i]-predConvert->y,2));
 			closestCircleIndex = i;
-		}//
-        if(i == closestCircleIndex)
+		}
+
+	}
+
+	for(unsigned int i=0;i<8;i++)//for each circle
+	{
+		//glColor3f(0.2,0.3,0.8);
+		if(i == closestCircleIndex)
 		{
-			glColor3f(0.2, 0.3, 0.8);
+			glBegin(GL_POLYGON);
+			glColor3f(0.3, 0.8, 0.2);
 		}
 		else
 		{
+			glBegin(GL_LINE_LOOP);
 			glColor3f(1,0.5,0);
 		}
 		for(unsigned int j=0;j<20;j++)//for each vertex in circle
