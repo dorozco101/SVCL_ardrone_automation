@@ -337,28 +337,31 @@ void MapView::drawTrail()
 
 	//Always draw these 8 circles
 	//draw the 8 points around the circle. (Right most going counter clockwise.)
-	float circleX[8] = {1.12, 0.80,    0, -0.81, -1.12, -0.77, 0,      0.76};
-	float circleY[8] = {   0, 0.78, 1.14,  0.78,	 0, -0.76, -1.12, -0.78};
+	float circleX[8] = {1.12, 0.80,    0, -0.81, -1.12, -0.77,     0, 0.76};
+	float circleY[8] = {   0, 0.78, 1.14,  0.78,     0, -0.76, -1.12, -0.78};
 	static int closestCircleIndex;
 	float closestDistance = 100000;
-	//distance = sqrt([x-x1]^2+[y-y1]^2) and neglect z    distance = sqrt(pow(circleX[i]-pos[0],2)+pow(circleY[i]-pos[1],2))
+	//distance = sqrt([x-x1]^2+[y-y1]^2) and neglect z	distance = sqrt(pow(circleX[i]-pos[0],2)+pow(circleY[i]-pos[1],2))
 
 	for(unsigned int i=0;i<8;i++)//for each circle
 	{
 		glBegin(GL_LINE_LOOP);
 		//glColor3f(0.2,0.3,0.8);
-		if(i == closestCircleIndex)
+		
+        //
+
+		if(closestDistance > (sqrt(pow(circleX[i]-predConvert->x,2)+pow(circleY[i]-predConvert->y,2))))//find shortest distance
+		{
+			closestDistance = sqrt(pow(circleX[i]-predConvert->x,2)+pow(circleY[i]-predConvert->y,2));
+			closestCircleIndex = i;
+		}//
+        if(i == closestCircleIndex)
 		{
 			glColor3f(0.2, 0.3, 0.8);
 		}
 		else
 		{
 			glColor3f(1,0.5,0);
-		}
-		if(closestDistance > (sqrt(pow(circleX[i]-pos[0],2)+pow(circleY[i]-pos[1],2))))//find shortest distance
-		{
-			closestDistance = sqrt(pow(circleX[i]-pos[0],2)+pow(circleY[i]-pos[1],2));
-			closestCircleIndex = i;
 		}
 		for(unsigned int j=0;j<20;j++)//for each vertex in circle
 		{

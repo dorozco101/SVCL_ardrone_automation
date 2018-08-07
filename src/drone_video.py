@@ -33,12 +33,14 @@ class DroneVideo(object):
         self.info = np.zeros((70,100,3), np.uint8)
 
         #Subscribe to the drones video feed
+        self.enableEmergency = False
+        self.emergency = False
         self.video = rospy.Subscriber('/ardrone/image_raw', Image, self.ROStoCVImage )
         self.moved = False
         self.currentTime = 0
         self.lastTime = 0
         self.window = [0,0,0,0,0,0,0,0,0]
-        self.enableEmergency = False
+
     def ROStoCVImage(self,data):
         
         #convert ROS Image to OpenCV Image

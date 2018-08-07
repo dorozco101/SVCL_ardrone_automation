@@ -18,9 +18,9 @@ class PIDHoverDirective(AbstractDroneDirective):
     # platformColor: color to hover over. Altitude is maintained
     def __init__(self, poseTracker,target,waitDist=0.05):
         
-        #self.Kp,self.Ki,self.Kd = 0.11,0.0,0.0004
         #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005 #best
-        self.Kp,self.Ki,self.Kd = 0.11,0.0,0.0004
+        self.Kp,self.Ki,self.Kd = 0.11,0.0,0.0005
+        #self.Kp,self.Ki,self.Kd = 0.0001,0.0,0.0000
         self.moveTime = 0.2
         self.waitTime = 0
         self.tracker = poseTracker
@@ -33,14 +33,18 @@ class PIDHoverDirective(AbstractDroneDirective):
         self.pub = rospy.Publisher('ardrone/tracker',tracker)
         self.track = tracker()
         self.platform = [0,0,0]
-        self.buff = np.repeat(np.asarray([self.worldTarget]).T,100,axis=1)
+        self.buff = np.repeat(np.asarray([self.worldTarget]).T,50,axis=1)
         self.tapeCounter = 0
         self.tapeLocation = None
-
+        #the amount of weight we would like to put towards correcting the drones drift by recognizing landmarks
+        self.correctionRatio = 0.3
     def distance(self,x,y):
         dist = (x[0]-y[0])**2+(x[1]-y[1])**2
         dist = dist**(0.5)
         return dist
+    def weightedUpdate(self,prediction,updateTerm):
+        return (self.correctionRatio*updateTerm[0,0]+(1-self.correctionRatio)*prediction[0,0],
+            self.correctionRatio*updateTerm[1,0]+(1-self.correctionRatio)*prediction[1,0],updateTerm[2,0],1.0)
     # given the image and navdata of the drone, returns the following in order:
     #
     # A directive status int:
@@ -67,21 +71,21 @@ class PIDHoverDirective(AbstractDroneDirective):
             tape = self.tracker.camera2Body([x,y,-predictedZ])
             worldPoint = self.tracker.camera2World([x,y,-predictedZ])
             
-            if ( self.tapeCounter < 100 and self.distance(worldPoint,self.worldTarget) < 0.25):
+            if ( self.tapeCounter < 50 and self.distance(worldPoint,self.worldTarget) < 0.25):
                 self.tapeCounter+=1
                 rospy.logwarn("Entering if " +str(self.tapeCounter))
-                if self.tapeCounter == 100:
+                if self.tapeCounter == 50:
                    self.tapeLocation = self.worldTarget
-                for i in range(99):
+                for i in range(49):
                     self.buff[:,i] = self.buff[:,i+1]
-                self.buff[:,99] = np.asarray([worldPoint[0,0],worldPoint[1,0],worldPoint[2,0]])
+                self.buff[:,49] = np.asarray([worldPoint[0,0],worldPoint[1,0],worldPoint[2,0]])
                 self.worldTarget = np.mean(self.buff,1)
 
             if self.tapeLocation != None:
                 dist = self.distance(worldPoint,self.tapeLocation)
                 if dist < 0.35 and dist > 0.15:
                     loc = self.tracker.tape2World([x,y,-predictedZ],self.yaw,[self.tapeLocation[0],self.tapeLocation[1],0])
-                    loc = (loc[0],loc[1],loc[2],1.0)
+                    loc = self.weightedUpdate(worldPoint,loc)
                     rospy.logwarn("Fixing location to ..."+str(loc))
             
             self.track.landMark = (self.worldTarget[0],self.worldTarget[1],0.0,1.0)

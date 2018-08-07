@@ -82,7 +82,6 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
         self.startTimer = time.clock()
         # max height of drone, in mm; any higher and the drone will auto-land
         self.maxHeight = 2530
-        self.enableEmergency = False
         self.emergency = False
         self.captureRound = 0.5
         self.oldBattery = -1
