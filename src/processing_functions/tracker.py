@@ -2,11 +2,12 @@
 import numpy as np
 reload(np)
 class Tracker(object):
-    def __init__(self,roll = 0,pitch = 0,yaw = 0,translation = [0,0,0]):
+    def __init__(self,roll = 0,pitch = 0,yaw = 0,translation = [0,0,0],cameraTranslation=[0,-0.06,0]):
         self.roll = roll
         self.pitch = pitch
         self.yaw = yaw
         self.translation  = translation
+	self.cameraTranslation = cameraTranslation
         self.updateTransforms()
 
     def reset(self):
@@ -66,7 +67,9 @@ class Tracker(object):
         T = np.identity(4)
         T[:3,:3] = np.dot(self.yawM(yaw),np.dot(self.pitchM(pitch),self.rollM(roll)))
         T[:3,3] = np.asarray(translation)
-        return T
+	T2 = np.identity(4)
+	T2[:3,3] = np.asarray(self.cameraTranslation)
+        return np.dot(T,T2)
 
     def body2CameraTrans(self,roll,pitch,yaw = 0,translation=[0,0,0]):
         T = np.identity(4)
@@ -90,7 +93,9 @@ class Tracker(object):
         T = np.identity(4)
         T[:3,:3] = np.dot(self.yawM(yaw),np.dot(self.pitchM(pitch),self.rollM(roll)))
         T[:3,3] = np.asarray(translation)
-        return T
+	T2 = np.identity(4)
+	T2[:3,3] = np.asarray(self.cameraTranslation)
+        return np.dot(T,T2)
 
     def world2CameraTrans(self,roll,pitch,yaw,translation):
         Tp = self.camera2WorldTrans(roll,pitch,yaw,translation)

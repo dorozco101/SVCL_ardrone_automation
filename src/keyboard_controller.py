@@ -4,6 +4,7 @@ import pygame
 import rospy
 from drone_controller import BasicDroneController
 from os.path import expanduser
+from std_msgs.msg import String as ROSString
 
 # global pygame color constants, in form (r,g,b) where 0 <= r/g/b <= 255
 GREY = (192,192,192)
@@ -18,9 +19,10 @@ class KeyboardController(object):
         self.screen = pygame.display.set_mode((640, 480))
         pygame.display.set_caption("Keyboard Controller")
         (self.screen).fill(GREY)
-        background = pygame.image.load(expanduser("~")+"/drone_workspace/src/ardrone_lab/src/resources/KeyboardCommands4.png")
+        background = pygame.image.load(expanduser("~")+"/drone_ws/src/ardrone_lab/src/resources/KeyboardCommands4.png")
         self.screen.blit(background,[0,0])
         pygame.display.update()
+        self.keyPub = rospy.Publisher('/controller/keyboard',ROSString)
 
         # setup controller + its variables
         self.controller = BasicDroneController("Keyboard")
@@ -39,7 +41,7 @@ class KeyboardController(object):
             for event in pygame.event.get():
                 # checking when keys are pressing down
                 if event.type == pygame.KEYDOWN and self.controller is not None:
-
+                    self.keyPub.publish(str(event.key))
                     if event.key == pygame.K_t:
                         #switches camera to bottom when it launches
                         self.controller.SendTakeoff()

@@ -15,14 +15,14 @@ import numpy as np
 class PIDHoverDirective(AbstractDroneDirective):
     
     # sets up this directive
-    # platformColor: color to hover over. Altitude is maintained
-    def __init__(self, poseTracker,target,waitDist=0.05):
+    # plrratformColor: color to hover over. Altitude is maintained
+    def __init__(self, poseTracker,target,waitDist=0.1):
         
         #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005 #best
-        self.Kp,self.Ki,self.Kd = 0.11,0.0,0.0005
+        self.Kp,self.Ki,self.Kd = 0.3,0.0,0.0005
         #self.Kp,self.Ki,self.Kd = 0.0001,0.0,0.0000
         self.moveTime = 0.2
-        self.waitTime = 0.1
+        self.waitTime = 0.0
         self.tracker = poseTracker
         self.target = target
         self.waitDist = waitDist
@@ -62,7 +62,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         self.yaw = self.tracker.yaw
         loc = (0,0,0,0)
         #circle detection
-        rospy.logwarn("x: "+str(self.tracker.translation[0])+" y: "+str(self.tracker.translation[1]))
+        #rospy.logwarn("x: "+str(self.tracker.translation[0])+" y: "+str(self.tracker.translation[1]))
         if radius != None:
             predictedZ = self.processVideo.CalcDistanceNew(88.0, radius* 2)/1000.0
             scale = (88.0/(radius*2))/1000.0 #meters/pixel
@@ -74,7 +74,7 @@ class PIDHoverDirective(AbstractDroneDirective):
             
             if ( self.distance(worldPoint,self.worldTarget) < 0.35):
                 self.tapeCounter+=1
-                rospy.logwarn("Entering if " +str(self.tapeCounter))
+                #rospy.logwarn("Entering if " +str(self.tapeCounter))
                 if self.tapeCounter == self.filterSize:
                    self.tapeLocation = self.worldTarget
                 for i in range(self.filterSize-1):
@@ -93,7 +93,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         else:
             self.track.landMark = (0,0,0,0.0)
 
-        rospy.logwarn("world target: " + str(self.worldTarget))
+        #rospy.logwarn("world target: " + str(self.worldTarget))
         self.track.landMark = (self.worldTarget[0],self.worldTarget[1],0.0,1.0)
         self.track.loc = loc
         self.pub.publish(self.track)
@@ -136,7 +136,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         pitch = -1 if pitch<-1 else pitch
         #rospy.logwarn("roll: "+str(self.tracker.roll))
         #rospy.logwarn("pitch: "+str(self.tracker.pitch))
-        #rospy.logwarn(directiveStatus)
+        rospy.logwarn(directiveStatus)
         return directiveStatus, (roll, pitch, 0, 0), segImage, None,self.moveTime, self.waitTime,None
 
 

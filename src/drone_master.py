@@ -19,6 +19,7 @@ from processing_functions import *
 from drone_directives import *
 from processing_functions.picture_manager import PictureManager
 from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import String as ROSString
 from svcl_ardrone_automation.msg import *
 
 # list of possible state machines that can be used to control drone
@@ -86,7 +87,8 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
         self.captureRound = 0.5
         self.oldBattery = -1
         self.photoDirective = None
-        
+
+        self.keySub = rospy.Subscriber('/controller/keyboard',ROSString,self.keyPress)
     # Each state machine that drone mastercan use is defined here;
     # When key is pressed, define the machine to be used and switch over to it.
     # Machines are defined as array of tuples. Each tuple represents a state's directive and duration
@@ -94,10 +96,8 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
     # ErrorDirectives are optional, so it can be just in the format
     # (directive, stateduration);
     # directive & errorDirective must subclass AbstractDroneDirective.
-    def KeyListener(self):
-
-        key=cv2.waitKey(1) & 0xFF
-        
+    def keyPress(self,key):
+        key = int(key.data)
         # hover over orange
         if key == ord('1'):
             
@@ -106,12 +106,14 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
 
             pidDirective1 = PIDHoverDirective(self.tracker,[0.0,0.0,0])
             pidDirective1.Reset()
-            pidDirective2 = PIDHoverDirective(self.tracker,[0.4,0.1,0])
-            pidDirective3 = PIDHoverDirective(self.tracker,[0.5,0.8,0])
+            pidDirective2 = PIDHoverDirective(self.tracker,[0.8,0.3,0])
             pidDirective2.Reset()
+            pidDirective3 = PIDHoverDirective(self.tracker,[1.1,1.0,0])
             pidDirective3.Reset()
-            alg = [(pidDirective1,6)]
-            #alg = [(pidDirective1,10),(pidDirective2,10),(pidDirective3,10)]
+            #pidDirective4 = PIDHoverDirective(self.tracker,[0.8,1.2,0])
+            pidDirective4.Reset()
+            alg = [(pidDirective1,30),(pidDirective2,30),(pidDirective3,30),( LandDirective(), 1)]
+            #alg = [(pidDirective1,40)]
             #rospy.logwarn("test3")
             #alg = [(HoverColorDirective("orange"),6)]
             end = [(pidDirective3,1000)]
@@ -120,17 +122,10 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
 
             self.MachineSwitch( None, alg, algCycles, None, "Basic Drone State Machine")
 
-        elif key == ord('3'):
+        elif key == ord('p'):
 
             pictureName = self.pictureManager.Capture(self.cv_image)
             rospy.logwarn("Saved picture")
-
-        # toggle camera
-        elif key == ord('c'):
-
-            self.controller.ToggleCamera()
-            rospy.logwarn("Toggled Camera")
-
         # land (32 => spacebar)
         elif key == 32:
 
@@ -140,10 +135,10 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
             self.SaveCachePictures()
 
         # save all pictures in cache
-        elif key == ord('s'):
+        elif key == ord('x'):
             self.SaveCachePictures()
 
-        elif key == ord('q') or key == ord('t'):
+        elif key == ord('9') or key == ord('0'):
 
             # main algorithm components
             self.moveTime = 0.20
@@ -181,14 +176,14 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
             ]
 
 
-            if key == ord('q'):
+            if key == ord('9'):
                 
                 #doesn't auto takeoff
 
                 self.MachineSwitch( None, alg, angles-1, end, AUTO_CIRCLE_MACHINE)
 
 
-            if key == ord('t'):
+            if key == ord('p'):
 
                 # does the entire circle algorithm, in order; takes off by itself
 
@@ -206,7 +201,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
 
         
         # just contains a machine to test any particular directive
-        elif key == ord('b'):
+        elif key == ord('o'):
             
             self.moveTime = 0.04
             self.waitTime = 0.14
@@ -379,7 +374,8 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
 
     # this is called by ROS when the node shuts down
     def ShutdownTasks(self):
-        self.logger.Stop()
+        #self.logger.Stop()
+        pass
 
 
 if __name__=='__main__':
