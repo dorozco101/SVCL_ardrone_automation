@@ -337,8 +337,8 @@ void MapView::drawTrail()
 
 	//Always draw these 8 circles
 	//draw the 8 points around the circle. (Right most going counter clockwise.)
-	float circleX[8] = {1.12, 0.80,    0, -0.81, -1.12, -0.77,     0, 0.76};
-	float circleY[8] = {   0, 0.78, 1.14,  0.78,     0, -0.76, -1.12, -0.78};
+	float circleX[8] = {1.12, 0.80,    0, -0.81, -1.12, -0.77, 0, 0.76};
+	float circleY[8] = {1.12, 1.90, 2.26,  1.90,  1.12,  0.36, 0, 0.34};
 	static int closestCircleIndex;
 	float closestDistance = 100000;
 	//distance = sqrt([x-x1]^2+[y-y1]^2) and neglect z	distance = sqrt(pow(circleX[i]-pos[0],2)+pow(circleY[i]-pos[1],2))
