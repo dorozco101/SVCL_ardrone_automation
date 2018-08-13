@@ -1,13 +1,12 @@
 
 import numpy as np
-reload(np)
 class Tracker(object):
     def __init__(self,roll = 0,pitch = 0,yaw = 0,translation = [0,0,0],cameraTranslation=[0,-0.06,0]):
         self.roll = roll
         self.pitch = pitch
         self.yaw = yaw
         self.translation  = translation
-	self.cameraTranslation = cameraTranslation
+        self.cameraTranslation = cameraTranslation
         self.updateTransforms()
 
     def reset(self):
@@ -32,7 +31,7 @@ class Tracker(object):
 
         self.body2CameraT,self.camera2BodyT = self.body2CameraTrans(self.roll,self.pitch)
     
-#creates matrix for rotation around y axis by angle theta in degrees 
+    #creates matrix for rotation around y axis by angle theta in degrees 
     def pitchM(self,angle):
         R = np.identity(3)
         theta = np.deg2rad(angle)
@@ -67,8 +66,8 @@ class Tracker(object):
         T = np.identity(4)
         T[:3,:3] = np.dot(self.yawM(yaw),np.dot(self.pitchM(pitch),self.rollM(roll)))
         T[:3,3] = np.asarray(translation)
-	T2 = np.identity(4)
-	T2[:3,3] = np.asarray(self.cameraTranslation)
+        T2 = np.identity(4)
+        T2[:3,3] = np.asarray(self.cameraTranslation)
         return np.dot(T,T2)
 
     def body2CameraTrans(self,roll,pitch,yaw = 0,translation=[0,0,0]):
@@ -93,8 +92,8 @@ class Tracker(object):
         T = np.identity(4)
         T[:3,:3] = np.dot(self.yawM(yaw),np.dot(self.pitchM(pitch),self.rollM(roll)))
         T[:3,3] = np.asarray(translation)
-	T2 = np.identity(4)
-	T2[:3,3] = np.asarray(self.cameraTranslation)
+        T2 = np.identity(4)
+        T2[:3,3] = np.asarray(self.cameraTranslation)
         return np.dot(T,T2)
 
     def world2CameraTrans(self,roll,pitch,yaw,translation):
@@ -143,4 +142,20 @@ class Tracker(object):
         return np.dot(transform,v)[:3]
 
 
+#given radius, number of points. calculate centers.
+#returns list of 3-tuples (x,y,z) going counter clockwise
+#first point is (0,0,0) always
+#    | +y
+#    |
+#  --O-- +x
+#    |
+#    |
+    def calcPoints(self, radius, numPoints):
+        assert (numPoints > 2), "Need at least 3 points."
+        assert (radius > 0), "Give me a positive radius."
+        points = [[0,0,0]]
+        angle = 2 * math.pi / numPoints
+        for i in range(1, numPoints):
+            points.append( [ radius*math.sin(angle*i), radius*(-math.cos(angle*i)+1), 0 ] )
+        return points
 
