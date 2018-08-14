@@ -8,37 +8,46 @@ from AbstractDroneDirective import *
 from processing_functions.pid_controller import PIDController
 from os.path import expanduser
 from std_msgs.msg import Int32, Float32
-
-# describes instruction on what the drone should do in order to hoves over 
+from svcl_ardrone_automation.msg import *
+import numpy as np
+# describes instruction on what the drone should do in order to hover over 
 # a specified color underneath it
 class PIDYawDirective(AbstractDroneDirective):
     
     # sets up this directive
-    # platformColor: color to hover over. Altitude is maintained
-    def __init__(self, tracker,target,yaw,waitDist = 0.1,waitAngle = 2):
+    # plrratformColor: color to hover over. Altitude is maintained
+    def __init__(self, poseTracker,target,yaw,platformNumber,waitDist=0.1):
         
-        self.Kp,self.Ki,self.Kd = 0.1,0.0,0.0004
-        #self.Kp,self.Ki,self.Kd = 0.1,0.0,0.0005
-        self.KpYaw,self.KiYaw,self.KdYaw = (1/180.0)*0.8,0,0
-
-        self.tracker = tracker
-        if (len(target) == 0):
-            self.yawOnly = True
-        else:
-            self.target = target
-            self.worldTarget = self.tracker.body2World(target)[:,0]
-            self.yawOnly = False
-
-        self.targetYaw = ((self.tracker.yaw+yaw)%360+360)%360
+        #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005 #best
+        self.Kp,self.Ki,self.Kd = 0.2,0.0,0.0005
+        self.moveTime = 0.2
+        self.waitTime = 0.0
+        self.tracker = poseTracker
+        self.target = target
         self.waitDist = waitDist
-        self.waitAngle = waitAngle
-        self.Reset()
-        #self.pub_pid_xspeed = rospy.Publisher('pid_xspeed', Float32, queue_size = 10)
-        #self.pub_pid_yspeed = rospy.Publisher('pid_yspeed', Float32, queue_size = 10)
-        #self.pub_pid_in_alt = rospy.Publisher('pid_in_alt', Int32, queue_size = 10)
-        #rate = rospy.Rate(5)
+        self.worldTarget = self.tracker.body2World(target)[:,0]
+        self.processVideo = ProcessVideo()
+        self.platformNumber = platformNumber
+        self.centery = 360/2.0
+        self.centerx = 640/2.0
+        self.pub = rospy.Publisher('ardrone/tracker',tracker)
+        self.track = tracker()
+        self.platform = [0,0,0]
+        self.filterSize = 50
+        self.buff = np.repeat(np.asarray([self.worldTarget]).T,self.filterSize,axis=1)
+        self.KpYaw,self.KiYaw,self.KdYaw = (1/180.0)*0.8,0,0
+        self.targetYaw = (yaw+360)%360
 
-
+        self.worldPoint = np.asarray([[0,0,0]]).T
+        #the amount of weight we would like to put towards correcting the drones drift by recognizing landmarks
+        self.correctionRatio = 0.9999
+    def distance(self,x,y):
+        dist = (x[0]-y[0])**2+(x[1]-y[1])**2
+        dist = dist**(0.5)
+        return dist
+    def weightedUpdate(self,prediction,updateTerm):
+        return (self.correctionRatio*updateTerm[0,0]+(1-self.correctionRatio)*prediction[0,0],
+            self.correctionRatio*updateTerm[1,0]+(1-self.correctionRatio)*prediction[1,0],updateTerm[2,0],1.0)
     # given the image and navdata of the drone, returns the following in order:
     #
     # A directive status int:
@@ -50,16 +59,49 @@ class PIDYawDirective(AbstractDroneDirective):
     #
     # An image reflecting what is being done as part of the algorithm
     def RetrieveNextInstruction(self, image, navdata):
-        rospy.logwarn("target yaw: " + str(self.targetYaw))
-        self.currentTime = time.time()
-        #Get current target in the drone frame
-        self.currentTarget = self.tracker.world2Body(self.worldTarget)
+
+        segImage, radius, center = self.processVideo.RecognizeShape(image, 'orange',(None,None))
         self.currentYaw = self.tracker.yaw
         #Calculate closest rotation to get to target angle
         theta = ((self.targetYaw - self.currentYaw)%360 + 360)%360
         theta = (theta-360) if (theta >180) else theta
-        #rospy.logwarn("ctheta: " +str(self.tracker.yaw))        
-        #rospy.logwarn("theta: "+str(self.targetYaw))
+        loc = (0,0,0,0)
+        #circle detection
+        #rospy.logwarn("x: "+str(self.tracker.translation[0])+" y: "+str(self.tracker.translation[1]))
+        if radius != None:
+            predictedZ = self.processVideo.CalcDistanceNew(88.0, radius* 2)/1000.0
+            scale = (88.0/(radius*2))/1000.0 #meters/pixel
+            x = (center[0]-self.centerx)*scale
+            y = (self.centery-center[1])*scale
+            
+            tape = self.tracker.camera2Body([x,y,-predictedZ])
+            worldPoint = self.tracker.camera2World([x,y,-predictedZ])
+            self.worldPoint = worldPoint
+            if ( self.distance(worldPoint,self.worldTarget) < 0.35):
+                
+                for i in range(self.filterSize-1):
+                    self.buff[:,i] = self.buff[:,i+1]
+                self.buff[:,self.filterSize-1] = np.asarray([worldPoint[0,0],worldPoint[1,0],worldPoint[2,0]])
+                self.worldTarget = np.mean(self.buff,1)
+            '''
+            if self.tapeLocation != None:
+                dist = self.distance(worldPoint,self.tapeLocation)
+                if dist < 0.35 and dist > 0.15:
+                    loc = self.tracker.tape2World([x,y,-predictedZ],self.yaw,[self.tapeLocation[0],self.tapeLocation[1],0])
+                    loc = self.weightedUpdate(worldPoint,loc)
+                    rospy.logwarn("Fixing location to ..."+str(loc))
+            '''
+            self.track.landMark = (self.worldTarget[0],self.worldTarget[1],0.0,1.0)
+        else:
+            self.track.landMark = (0,0,0,0.0)
+
+        #rospy.logwarn("world target: " + str(self.worldTarget))
+        self.track.landMark = (self.worldTarget[0],self.worldTarget[1],0.0,1.0)
+        self.track.loc = loc
+        self.pub.publish(self.track)
+        self.currentTarget = self.tracker.world2Body(self.worldTarget)
+        self.currentTime = time.time()
+        
         if self.lastTime == 0:
             self.rollError = 0
             self.pitchError = 0
@@ -68,54 +110,62 @@ class PIDYawDirective(AbstractDroneDirective):
             self.rollError = self.currentTarget[0]
             self.pitchError = self.currentTarget[1]
             self.yawError = theta
-
         self.dt = (self.currentTime - self.lastTime)/1000.
 
         self.totalError = [self.totalError[0]+self.rollError*self.dt, 
                         self.totalError[1]+self.pitchError*self.dt,
                         self.totalError[2]+self.yawError*self.dt,0]
-        
+
         pRoll = -self.Kp*(self.rollError)
         iRoll = -self.Ki*(self.totalError[0])
         dRoll = -self.Kd*((self.rollError-self.lastError[0])/self.dt)
-        roll = pRoll +iRoll+dRoll
-        roll = 1 if roll>1 else roll
-        roll = -1 if roll<-1 else roll
 
         pPitch = self.Kp*(self.pitchError)
         iPitch = self.Ki*(self.totalError[1])
         dPitch = self.Kd*((self.pitchError-self.lastError[1])/self.dt)
-
-        pitch = pPitch + iPitch + dPitch
-        pitch = 1 if pitch>1 else pitch
-        pitch = -1 if pitch<-1 else pitch
         
         pYaw = self.KpYaw*(self.yawError)
         iYaw = self.KiYaw*(self.totalError[2])
         dYaw = self.KdYaw*((self.yawError-self.lastYawError)/self.dt)
         yaw = pYaw + iYaw + dYaw
-        
+
         self.lastError = self.currentTarget
         self.lastYawError = self.yawError
+
         self.lastTime = self.currentTime
-        rospy.logwarn("yaw: " +str(self.currentYaw))
-
-        #if (abs(self.rollError) <= self.waitDist and abs(self.pitchError) <=self.waitDist) and abs(theta)<self.waitAngle:
-        if (abs(theta)<self.waitAngle):
-            directiveStatus = 1
-        else:
-            directiveStatus = 1
-        #Trim commands over the drones command limit
         
+        roll = pRoll +iRoll+dRoll
+        pitch = pPitch + iPitch + dPitch
 
+        if (abs(self.rollError) <= self.waitDist and abs(self.pitchError) <=self.waitDist and abs(self.yawError) < 2):
+            directiveStatus = 1
+            rospy.logwarn(self.yawError)
+        else:
+            directiveStatus = 0
+        #Trim commands over the drones command limit
+        roll = 1 if roll>1 else roll
+        roll = -1 if roll<-1 else roll
+        pitch = 1 if pitch>1 else pitch
+        pitch = -1 if pitch<-1 else pitch
 
+        #rospy.logwarn("roll: "+str(self.tracker.roll))
+        #rospy.logwarn("pitch: "+str(self.tracker.pitch))
         rospy.logwarn(directiveStatus)
-        return directiveStatus, (roll, pitch, yaw, 0), image, None, 0, 0,None
+        return directiveStatus, (roll, pitch, yaw, 0), segImage, None,self.moveTime, self.waitTime,None
 
 
     # This method is called by the state machine when it considers this directive finished
     def Finished(self):
         self.Reset()
+        #tapeLocation = self.tracker.body2World(self.target)[:,0]
+        #loc = self.tracker.tape2World([x,y,-predictedZ],self.yaw,[tapeLocation[0],tapeLocation[1],0])
+        if (self.platformNumber % 3 == 0):
+            loc = np.asarray([self.target]).T
+            loc[2] = 1.0
+            rospy.logwarn("Reseting location to" +str(loc))
+            loc = self.weightedUpdate(self.worldPoint,loc)
+            self.track.loc = loc
+            self.pub.publish(self.track)
 
     def Reset(self):
         self.dt = 0
@@ -123,11 +173,9 @@ class PIDYawDirective(AbstractDroneDirective):
         self.lastTime = 0
         self.rollError = 0
         self.pitchError = 0
-        self.yawError = 0
-
         self.lastError = [0,0,0]
         self.lastYawError = 0
-
         self.totalError = [0,0,0,0]
+
 
 

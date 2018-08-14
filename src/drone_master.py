@@ -48,7 +48,9 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
         
         self.objectName = "NASA Airplane"
         self.startingAngle = 0
-        
+        self.circleRadius = 1 #meters
+        self.circlePoints = 8 #numbers of points equally spaced along circle
+        self.startTime = 0
         # backpack: 120/-55/95
         # +100 for big objects, +50 for shorter objects. (Modifies how close drone is to object; smaller # > closer)
         # +10 for very small objects.
@@ -60,7 +62,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
 
 
         # Seting up a timestamped folder inside Flight_Info that will have the pictures & log of this flight
-        self.droneRecordPath= (expanduser("~")+"/drone_workspace/src/ardrone_lab/src/Flight_Info/"
+        self.droneRecordPath= (expanduser("~")+"/drone_ws/src/SVCL_ardrone_automation/src/Flight_Info/"
         + datetime.datetime.now().strftime("%m-%d-%Y__%H:%M:%S, %A")+"_Flight_" + self.objectName + "/")
         if not os.path.exists(self.droneRecordPath):
             os.makedirs(self.droneRecordPath)
@@ -68,7 +70,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
         #self.logger.Start()
 
         #import PID and color constants
-        self.settingsPath = expanduser("~")+"/drone_workspace/src/ardrone_lab/src/resources/calibrater_settings.txt"
+        self.settingsPath = expanduser("~")+"/drone_ws/src/SVCL_ardrone_automation/src/resources/calibrater_settings.txt"
 
         # initalizing the state machine that will handle which algorithms to run at which time;
         # the results of the algorithms will be used to control the drone
@@ -100,27 +102,37 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
         key = int(key.data)
         # hover over orange
         if key == ord('1'):
+            self.startTime = time.time()
+            points = self.tracker.calcPoints(self.circleRadius,self.circlePoints)
+            #pidDirectives = [PIDHoverDirective(self.tracker,[0,0,0],0)]
+            #pidDirectives[0].Reset()
+            alg = []
+            pidDirectives=[]
+            '''
+            alg = [(pidDirectives[0],30)]
+            flightAltitude = 1360 + self.zOffset
+            objectAltitude = 1360 + self.zOffset
+            init = [
+                ( SetupDirective(), 1), ( IdleDirective("Pause for setup"), 10 ),
+                ( FlatTrimDirective(), 1), ( IdleDirective("Pause for flat trim"), 10 ),
+                ( SetCameraDirective("BOTTOM"), 1 ), ( IdleDirective(" Pause for seting camera"), 10 ),
+                ( TakeoffDirective(), 1), ( IdleDirective("Pause for takeoff"), 120 )
+                #( ReachAltitudeDirective(flightAltitude, 85), 2)
+                ]
+
+            '''
+            init = None
+            for index in range(len(points)/2):
+                point = points[index]
+                pidDirectives.append( PIDYawDirective(self.tracker,point[:3],point[3],index) )
+                pidDirectives[index].Reset()
+                alg.append((pidDirectives[index],30))
+            alg.append( ( LandDirective(),1) )
+            algCycles = 1
             
-            self.moveTime = 0.11
-            self.waitTime = 0
+            #algCycles = -1
 
-            pidDirective1 = PIDHoverDirective(self.tracker,[0.0,0.0,0])
-            pidDirective1.Reset()
-            pidDirective2 = PIDHoverDirective(self.tracker,[0.8,0.3,0])
-            pidDirective2.Reset()
-            pidDirective3 = PIDHoverDirective(self.tracker,[1.1,1.0,0])
-            pidDirective3.Reset()
-            #pidDirective4 = PIDHoverDirective(self.tracker,[0.8,1.2,0])
-            pidDirective4.Reset()
-            alg = [(pidDirective1,30),(pidDirective2,30),(pidDirective3,30),( LandDirective(), 1)]
-            #alg = [(pidDirective1,40)]
-            #rospy.logwarn("test3")
-            #alg = [(HoverColorDirective("orange"),6)]
-            end = [(pidDirective3,1000)]
-            algCycles = -1
-
-
-            self.MachineSwitch( None, alg, algCycles, None, "Basic Drone State Machine")
+            self.MachineSwitch( init, alg, algCycles, None, "Basic Drone State Machine")
 
         elif key == ord('p'):
 
@@ -250,7 +262,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
         
         rospy.logwarn('======= Drone Master: Changing from the "' + str(oldMachine) +
         '" machine to the "' + str(self.currMachine) + '" machine =======')
-
+        rospy.logwarn("Finished algorithm in "+str(time.time()-self.startTime)+" seconds.")
 
     # This is called every time a frame (in self.cv_image) is updated.
     # Runs an iteration of the current state machine to get the next set of instructions, depending on the 

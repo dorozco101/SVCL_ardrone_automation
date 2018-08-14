@@ -16,11 +16,10 @@ class PIDHoverDirective(AbstractDroneDirective):
     
     # sets up this directive
     # plrratformColor: color to hover over. Altitude is maintained
-    def __init__(self, poseTracker,target,waitDist=0.1):
+    def __init__(self, poseTracker,target,platformNumber,waitDist=0.1):
         
         #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005 #best
-        self.Kp,self.Ki,self.Kd = 0.3,0.0,0.0005
-        #self.Kp,self.Ki,self.Kd = 0.0001,0.0,0.0000
+        self.Kp,self.Ki,self.Kd = 0.2,0.0,0.0005
         self.moveTime = 0.2
         self.waitTime = 0.0
         self.tracker = poseTracker
@@ -28,6 +27,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         self.waitDist = waitDist
         self.worldTarget = self.tracker.body2World(target)[:,0]
         self.processVideo = ProcessVideo()
+        self.platformNumber = platformNumber
         self.centery = 360/2.0
         self.centerx = 640/2.0
         self.pub = rospy.Publisher('ardrone/tracker',tracker)
@@ -35,10 +35,9 @@ class PIDHoverDirective(AbstractDroneDirective):
         self.platform = [0,0,0]
         self.filterSize = 50
         self.buff = np.repeat(np.asarray([self.worldTarget]).T,self.filterSize,axis=1)
-        self.tapeCounter = 0
-        self.tapeLocation = None
+        self.worldPoint = np.asarray([[0,0,0]]).T
         #the amount of weight we would like to put towards correcting the drones drift by recognizing landmarks
-        self.correctionRatio = 0.3
+        self.correctionRatio = 0.9999
     def distance(self,x,y):
         dist = (x[0]-y[0])**2+(x[1]-y[1])**2
         dist = dist**(0.5)
@@ -59,7 +58,7 @@ class PIDHoverDirective(AbstractDroneDirective):
     def RetrieveNextInstruction(self, image, navdata):
 
         segImage, radius, center = self.processVideo.RecognizeShape(image, 'orange',(None,None))
-        self.yaw = self.tracker.yaw
+        self.currentYaw = self.tracker.yaw
         loc = (0,0,0,0)
         #circle detection
         #rospy.logwarn("x: "+str(self.tracker.translation[0])+" y: "+str(self.tracker.translation[1]))
@@ -71,12 +70,9 @@ class PIDHoverDirective(AbstractDroneDirective):
             
             tape = self.tracker.camera2Body([x,y,-predictedZ])
             worldPoint = self.tracker.camera2World([x,y,-predictedZ])
-            
+            self.worldPoint = worldPoint
             if ( self.distance(worldPoint,self.worldTarget) < 0.35):
-                self.tapeCounter+=1
-                #rospy.logwarn("Entering if " +str(self.tapeCounter))
-                if self.tapeCounter == self.filterSize:
-                   self.tapeLocation = self.worldTarget
+                
                 for i in range(self.filterSize-1):
                     self.buff[:,i] = self.buff[:,i+1]
                 self.buff[:,self.filterSize-1] = np.asarray([worldPoint[0,0],worldPoint[1,0],worldPoint[2,0]])
@@ -143,6 +139,15 @@ class PIDHoverDirective(AbstractDroneDirective):
     # This method is called by the state machine when it considers this directive finished
     def Finished(self):
         self.Reset()
+        #tapeLocation = self.tracker.body2World(self.target)[:,0]
+        #loc = self.tracker.tape2World([x,y,-predictedZ],self.yaw,[tapeLocation[0],tapeLocation[1],0])
+        if (self.platformNumber % 3 == 0):
+            loc = np.asarray([self.target]).T
+            loc[2] = 1.0
+            rospy.logwarn("Reseting location to" +str(loc))
+            loc = self.weightedUpdate(self.worldPoint,loc)
+            self.track.loc = loc
+            self.pub.publish(self.track)
 
     def Reset(self):
         self.dt = 0
