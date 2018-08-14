@@ -156,6 +156,6 @@ class Tracker(object):
         points = [[0,0,0,0]]
         angle = 2 * np.pi / numPoints
         for i in range(1, numPoints):
-            points.append( [ radius*np.sin(angle*i), radius*(-np.cos(angle*i)+1), 0 , angle*i] )
+            points.append( [ radius*np.sin(angle*i), radius*(-np.cos(angle*i)+1), 0 , np.degrees(angle*i)] )
         return points
 
