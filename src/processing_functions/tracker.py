@@ -153,9 +153,9 @@ class Tracker(object):
     def calcPoints(self, radius, numPoints):
         assert (numPoints > 2), "Need at least 3 points."
         assert (radius > 0), "Give me a positive radius."
-        points = [[0,0,0]]
+        points = [[0,0,0,0]]
         angle = 2 * np.pi / numPoints
         for i in range(1, numPoints):
-            points.append( [ radius*np.sin(angle*i), radius*(-np.cos(angle*i)+1), 0 ] )
+            points.append( [ radius*np.sin(angle*i), radius*(-np.cos(angle*i)+1), 0 , angle*i] )
         return points
 
