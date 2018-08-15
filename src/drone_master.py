@@ -48,7 +48,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
         
         self.objectName = "NASA Airplane"
         self.startingAngle = 0
-        self.circleRadius = 1 #meters
+        self.circleRadius = 1.1 #meters
         self.circlePoints = 8 #numbers of points equally spaced along circle
         self.startTime = 0
         # backpack: 120/-55/95
@@ -88,8 +88,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
         self.emergency = False
         self.captureRound = 0.5
         self.oldBattery = -1
-        self.photoDirective = None
-
+        self.photoDirective = CapturePhotoDirective(self.droneRecordPath, 1, 0.014, self.objectName, self.circlePoints, 1000, 0)
         self.keySub = rospy.Subscriber('/controller/keyboard',ROSString,self.keyPress)
     # Each state machine that drone mastercan use is defined here;
     # When key is pressed, define the machine to be used and switch over to it.
@@ -122,11 +121,16 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
 
             '''
             init = None
-            for index in range(len(points)/2):
+            for index in range(len(points)):
                 point = points[index]
-                pidDirectives.append( PIDYawDirective(self.tracker,point[:3],point[3],index) )
+                pidDirectives.append( PIDHoverDirective(self.tracker,point[:3],index) )
                 pidDirectives[index].Reset()
-                alg.append((pidDirectives[index],30))
+                alg.append((pidDirectives[index],40))
+                alg.append(( SetCameraDirective("FRONT"), 1 ))
+                alg.append(( IdleDirective("Pause for setting camera to front"), 25 ))
+                alg.append(( self.photoDirective, 1 ))
+                alg.append((SetCameraDirective("BOTTOM"), 1 ))
+                alg.append(( IdleDirective("Pause for setting camera to bottom"), 25 ))
             alg.append( ( LandDirective(),1) )
             algCycles = 1
             

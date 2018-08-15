@@ -105,8 +105,8 @@ class PIDHoverDirective(AbstractDroneDirective):
             self.rollError = self.currentTarget[0]
             self.pitchError = self.currentTarget[1]
         if (self.tracker.translation[0] == self.lastLocation[0] and self.tracker.translation[1] == self.lastLocation[1] and self.lastLocation[2] == self.tracker.translation[2]):
-            #self.rollError = 0
-            #self.pitchError = 0
+            self.rollError = 0
+            self.pitchError = 0
             rospy.logwarn("Error: State estimation may be crashed")
         self.dt = (self.currentTime - self.lastTime)/1000.
 

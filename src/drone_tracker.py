@@ -24,7 +24,7 @@ class DroneTracker(object):
 
     def callback(self,state):
         #self.translation = [1.75*state.x,1.4*state.y,state.z]
-        self.translation = [state.x,state.y,state.z]
+        self.translation = [state.x*1.1,state.y*1.1,state.z]
         self.yaw = -state.yaw
         self.roll = state.roll
         self.pitch = state.pitch
