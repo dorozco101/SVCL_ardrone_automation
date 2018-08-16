@@ -86,7 +86,7 @@ class ProcessVideo(object):
             lower=array(hsv_boundaries[0][0], dtype = "uint8")
             upper= array(hsv_boundaries[0][1],dtype = "uint8")
         elif(color =='test'):
-            hsv_boundaries = [( [4, 100, 1],[16, 255, 255] )]
+            hsv_boundaries = [( [1, 90, 120],[45, 255, 255] )]
             #hsv_boundaries2 = [([178, 75, 120],[180, 255, 255])]
             #hsv_boundaries2 = [([174, 61, 120],[180, 255, 255])]
             lower=array(hsv_boundaries[0][0], dtype = "uint8")
@@ -867,9 +867,7 @@ class ProcessVideo(object):
         imagePerimeter = 2*numrows+2*numcols
 
         contours = cv2.findContours(binaryImage.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        center = (None,None)
-        circles = [None]
+        circles = []
         #use contours[0] for opencv2 or contours[1] for opencv3
         contours = contours[1]
         for shape in contours:
@@ -916,21 +914,18 @@ class ProcessVideo(object):
                                 if deltaRadius > threshold*averageRadius:
                                     isCircle = False
                                     break
-                                
+                               
                         if isCircle:
-                            if lastLocation == (None,None):
-                                 #draw circle onto image
-                                cv2.circle(segmentedImage, center,1,(255,255,255),-1)
-                                cv2.circle(segmentedImage,center, int(averageRadius),(255,255,255),4)
-                                #cv2.drawContours(segmentedImage,[vertices],-1,(0,255,0),2)
-                                #this will return after the first circle is detected
-                                return segmentedImage, averageRadius, center
-
-                            if circles[0] == None:
-                                circles = [(center,averageRadius)]
-                            else:
-                                circles.append((center,averageRadius))
-
+                            #if lastLocation == (None,None):
+                            #draw circle onto image
+                            cv2.circle(segmentedImage, center,1,(255,255,255),-1)
+                            cv2.circle(segmentedImage,center, int(averageRadius),(255,255,255),4)
+                            #cv2.drawContours(segmentedImage,[vertices],-1,(0,255,0),2)
+                            #this will return after the first circle is detected
+                            #return segmentedImage, averageRadius, center
+                            circles.append((center,averageRadius))
+                            
+        '''
         if circles[0] != None:
             distances = [None]
             for circle in circles:
@@ -955,11 +950,10 @@ class ProcessVideo(object):
             cv2.circle(segmentedImage,center, int(averageRadius),(255,255,255),4)
             #cv2.drawContours(segmentedImage,[vertices],-1,(0,255,0),2)
             #this will return after the first circle is detected
-            return segmentedImage, averageRadius, center
+        '''
+        return segmentedImage, circles
 
             #if we have looped through every object and dont see a circle, return None
-        else:
-            return segmentedImage, None, center
 
 
     # Given an image, a point (x,y), and a width/height,
