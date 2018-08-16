@@ -997,3 +997,17 @@ class ProcessVideo(object):
             return distance,(cx,cy)
         return None, None
 
+    def DetectOrange(self, img, h=4):
+        r,c,_ = img.shape
+        segment = np.zeros((r,c,3), np.uint8)
+        binary = np.zeros((r,c,1), np.uint8)
+        for i in range(0,r,h):
+            for j in range(0,c,h):
+                if img[i,j][0]+20 < img[i,j][2] and img[i,j][1]+20 < img[i,j][2]:
+                    for xi in range(0,h):
+                        for yi in range(0,h):
+                            segment[i+xi,j+yi] = img[i+xi,j+yi]
+                            binary[i+xi,j+yi] = 1
+
+        return segment,binary
+
