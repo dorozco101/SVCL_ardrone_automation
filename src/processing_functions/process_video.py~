@@ -861,7 +861,8 @@ class ProcessVideo(object):
         #bottom camera f = 408.0038
         #first segment the image by color of circle
         
-        segmentedImage,_,binaryImage = self.DetectColor(image, shapeColor,"all")
+        #segmentedImage,_,binaryImage = self.DetectColor(image, shapeColor,"all")
+        segmentedImage,binaryImage = self.DetectOrange(image)
 
         numrows,numcols,channels=image.shape
         imagePerimeter = 2*numrows+2*numcols
@@ -996,4 +997,18 @@ class ProcessVideo(object):
             cy = (2*y + w)/2
             return distance,(cx,cy)
         return None, None
+
+    def DetectOrange(self, img, h=4):
+        r,c,_ = img.shape
+        segment = np.zeros((r,c,3), np.uint8)
+        binary = np.zeros((r,c,1), np.uint8)
+        for i in range(0,r,h):
+            for j in range(0,c,h):
+                if img[i,j][0]+20 < img[i,j][2] and img[i,j][1]+20 < img[i,j][2]:
+                    for xi in range(0,h):
+                        for yi in range(0,h):
+                            segment[i+xi,j+yi] = img[i+xi,j+yi]
+                            binary[i+xi,j+yi] = 1
+
+        return segment,binary
 

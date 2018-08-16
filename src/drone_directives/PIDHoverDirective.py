@@ -57,21 +57,27 @@ class PIDHoverDirective(AbstractDroneDirective):
     #
     # An image reflecting what is being done as part of the algorithm
     def RetrieveNextInstruction(self, image, navdata):
-        segImage, circles = self.processVideo.RecognizeShape(image, 'test',self.tapeLocation)
+        segImage, circles = self.processVideo.RecognizeShape(image, 'test')
         self.currentYaw = self.tracker.yaw
         
         loc = (0,0,0,0)
         #circle detection
         #rospy.logwarn("x: "+str(self.tracker.translation[0])+" y: "+str(self.tracker.translation[1]))
         if len(circles) != 0:
+            minDist = -1
             for circle in circles:
+                radius = circle[1]
+                center = circle[0]
                 predictedZ = self.processVideo.CalcDistanceNew(88.0, radius* 2)/1000.0
                 scale = (88.0/(radius*2))/1000.0 #meters/pixel
                 x = (center[0]-self.centerx)*scale
                 y = (self.centery-center[1])*scale
             #rospy.logwarn(self.tapeLocation)
             #tape = self.tracker.camera2Body([x,y,-predictedZ])
-                worldPoint = self.tracker.camera2World([x,y,-predictedZ])
+                point = self.tracker.camera2World([x,y,-predictedZ])
+                dist = self.distance(point,self.worldTarget)
+                if dist < minDist or minDist == -1:
+                    worldPoint = point
             self.worldPoint = worldPoint
             if ( self.distance(worldPoint,self.worldTarget) < 0.35):
                 
