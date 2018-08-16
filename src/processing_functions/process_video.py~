@@ -857,7 +857,7 @@ class ProcessVideo(object):
         return segmentedImage, None, center
 
 
-    def RecognizeShape(self,image, shapeColor,lastLocation,threshold = 0.2):
+    def RecognizeShape(self,image, shapeColor,threshold = 0.2):
         #bottom camera f = 408.0038
         #first segment the image by color of circle
         

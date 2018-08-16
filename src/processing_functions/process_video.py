@@ -1000,8 +1000,8 @@ class ProcessVideo(object):
 
     def DetectOrange(self, img, h=4):
         r,c,_ = img.shape
-        segment = np.zeros((r,c,3), np.uint8)
-        binary = np.zeros((r,c,1), np.uint8)
+        segment = zeros((r,c,3), uint8)
+        binary = zeros((r,c,1), uint8)
         for i in range(0,r,h):
             for j in range(0,c,h):
                 if img[i,j][0]+20 < img[i,j][2] and img[i,j][1]+20 < img[i,j][2]:
