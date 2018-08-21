@@ -64,12 +64,12 @@ class ProcessVideo(object):
             upper2=array(hsv_boundaries2[0][1], dtype = "uint8")
 
         elif(color=='blue'):
-            hsv_boundaries = [ ([102,110,70],[115,255,255])]
+            hsv_boundaries = [ ([100,50,70],[140,255,255])]
             lower=array(hsv_boundaries[0][0], dtype = "uint8")
             upper= array(hsv_boundaries[0][1],dtype = "uint8")
         
         elif(color=='green'):
-            hsv_boundaries = [ ([40, 70, 0],[70, 190, 254])]
+            hsv_boundaries = [ ([40, 70, 10],[70, 190, 254])]
             lower=array(hsv_boundaries[0][0], dtype = "uint8")
             upper= array(hsv_boundaries[0][1],dtype = "uint8")
 
@@ -162,7 +162,7 @@ class ProcessVideo(object):
     # The first tuple is always the middle line to use (closest to horizontal)
     def MultiShowLine(self, image, sort = True):
 
-        # turning segmented image into a binary image and performing a close on it
+       # turning segmented image into a binary image and performing a close on it
         processedImg = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
         _, processedImg = cv2.threshold(processedImg, 15, 255, 0)
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5,5))
@@ -171,8 +171,8 @@ class ProcessVideo(object):
         # finding and drawing contours onto the image
         _, contours, _ = cv2.findContours(processedImg, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_L1)
 
-        drawImg = cv2.cvtColor(processedImg, cv2.COLOR_GRAY2BGR)
-
+        #drawImg = cv2.cvtColor(processedImg, cv2.COLOR_GRAY2BGR)
+        drawImg = image
         drawn = 0
         centers = []
         lines = []
@@ -195,16 +195,19 @@ class ProcessVideo(object):
                 cv2.line(image, longest[0], longest[1], (255,255,255),3)
                 vert = longest[1][1] - longest[0][1]
                 horiz = longest[1][0] - longest[0][0]
+                
                 if horiz !=0:
                     angle = rad2deg(arctan(vert/horiz))
+                    angle = angle+90
+                    if angle > 90:
+                        angle = angle-180
                 else: 
-                    angle = 90
-
-                if angle != 90:
-                    angle = -angle
-                if angle < 0:
-                    angle = angle + 180
-
+                    angle = 0
+                #if angle != 0:
+                #angle = -angle
+                
+                #if angle < 0:
+                    #angle = angle + 180
                 # finding the center
                 M = cv2.moments(c)
 
@@ -213,8 +216,8 @@ class ProcessVideo(object):
                     cY = int(M["m01"] / M["m00"])
     
                     # drawing center and contour on image
-                    #cv2.drawContours(drawImg, [c], -1, (255, 191, 30), 4)
-                    #cv2.circle(drawImg, (cX, cY), 7, (0,255,0), -1)
+                    cv2.drawContours(drawImg, [c], -1, (255, 191, 30), 4)
+                    cv2.circle(drawImg, (cX, cY), 7, (0,255,0), -1)
                     
                     # line angle, center, endpoint 1, endpoint 2, length
                     lines.append((angle, (cX,cY), longest[0], longest[1], longest[2]))
@@ -222,32 +225,11 @@ class ProcessVideo(object):
                 drawn += 1
         # to do, debt
         if sort == False:
-            return lines, image
+            return lines, drawImg
         else:
             # finding middle line, closest to the orientation
             lines = sorted(lines, key = self.getHoriz)
-
-            if len(lines) == 0:
-                lines = (None,None,None)
-            elif len(lines) == 1:
-                lines = (None, lines[0], None)
-            elif len(lines) == 2:
-                if lines[1][0] > 90:
-                    lines = (lines[1], lines[0], None)
-                else:
-                    lines = (None, lines[0], lines[1])
-            elif len(lines) == 3:
-                if lines[1][0] > 90:
-                    lines = (lines[1], lines[0], lines[2])
-                else:
-                    lines = (lines[2], lines[0], lines[1])
-
-            # safety check; line to the right of the middle must be actually to the right
-            if lines[2] != None:
-                if lines[2][1][0] < lines[1][1][0]:
-                    lines = (lines[0], lines[1], None)
-
-            return lines, image
+            return lines, drawImg
 
 
     def getHoriz(self, line):
@@ -861,8 +843,8 @@ class ProcessVideo(object):
         #bottom camera f = 408.0038
         #first segment the image by color of circle
         
-        #segmentedImage,_,binaryImage = self.DetectColor(image, shapeColor,"all")
-        segmentedImage,binaryImage = self.DetectOrange(image)
+        segmentedImage,_,binaryImage = self.DetectColor(image, shapeColor,"all")
+        #segmentedImage,binaryImage = self.DetectOrange(image)
 
         numrows,numcols,channels=image.shape
         imagePerimeter = 2*numrows+2*numcols

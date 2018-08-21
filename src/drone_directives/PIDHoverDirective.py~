@@ -20,10 +20,14 @@ class PIDHoverDirective(AbstractDroneDirective):
         
         #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005 #best
         self.Kp,self.Ki,self.Kd = 0.2,0.0,0.0005
+        self.Kpz = 0.1
+        self.KpYaw,self.KiYaw,self.KdYaw = 2/180,0,0
+
         self.moveTime = 0.2
         self.waitTime = 0.0
         self.tracker = poseTracker
         self.target = target
+        self.target[2] = target[2]-self.tracker.translation[2]
         self.waitDist = waitDist
         self.worldTarget = self.tracker.body2World(target)[:,0]
         self.processVideo = ProcessVideo()
@@ -33,8 +37,9 @@ class PIDHoverDirective(AbstractDroneDirective):
         self.pub = rospy.Publisher('ardrone/tracker',tracker)
         self.track = tracker()
         self.platform = [0,0,0]
-        self.filterSize = 50
-        self.buff = np.repeat(np.asarray([self.worldTarget]).T,self.filterSize,axis=1)
+        self.filterSize = 30
+        self.platformBuff = np.repeat(np.asarray([self.worldTarget]).T,self.filterSize,axis=1)
+        self.heightBuff = np.zeros(4)
         self.worldPoint = np.asarray([[0,0,0]]).T
         self.lastLocation = self.tracker.translation
         #the amount of weight we would like to put towards correcting the drones drift by recognizing landmarks
@@ -57,12 +62,9 @@ class PIDHoverDirective(AbstractDroneDirective):
     #
     # An image reflecting what is being done as part of the algorithm
     def RetrieveNextInstruction(self, image, navdata):
-        segImage, circles = self.processVideo.RecognizeShape(image, 'test',self.tapeLocation)
-        self.currentYaw = self.tracker.yaw
         
-        loc = (0,0,0,0)
-        #circle detection
-        #rospy.logwarn("x: "+str(self.tracker.translation[0])+" y: "+str(self.tracker.translation[1]))
+        segImage, circles = self.processVideo.RecognizeShape(image, 'test')
+        bestTheta = None
         if len(circles) != 0:
             minDist = -1
             for circle in circles:
@@ -78,21 +80,45 @@ class PIDHoverDirective(AbstractDroneDirective):
                 dist = self.distance(point,self.worldTarget)
                 if dist < minDist or minDist == -1:
                     worldPoint = point
+                    z = predictedZ
+                    Center = center
+            blue = self.processVideo.DetectColor(image,'blue','segmented')
+            lines,blueImage = self.processVideo.MultiShowLine(blue)
+            image = blueImage
+            minDist = -1
+            for line in lines:
+                theta = line[0]
+                theta = theta
+                tapeCenter = line[1]
+                dist = self.distance(Center,tapeCenter)
+                if minDist == -1 or dist<minDist:
+                    minDist = dist
+                    bestTheta = theta
+        if bestTheta != None:
+            self.currentYaw = bestTheta
+        else:
+            self.currentYaw = 0
+         #Calculate closest rotation to get to target angle
+        theta = (0 - self.currentYaw+360)%360
+        theta = (theta-360) if (theta >180) else theta
+
+        zError = 0
+        loc = (0,0,0,0)
+        #circle detection
+        #rospy.logwarn("x: "+str(self.tracker.translation[0])+" y: "+str(self.tracker.translation[1]))
+        if len(circles) != 0:
             self.worldPoint = worldPoint
+            rospy.logwarn(self.worldPoint)
             if ( self.distance(worldPoint,self.worldTarget) < 0.35):
-                
+                for i in range(self.heightBuff.shape[0]-1):
+                    self.heightBuff[i] = self.heightBuff[i+1]
+                self.heightBuff[self.heightBuff.shape[0]-1] = z
+                height = np.mean(self.heightBuff)
+                zError = (self.worldTarget[2]-height)
                 for i in range(self.filterSize-1):
-                    self.buff[:,i] = self.buff[:,i+1]
-                self.buff[:,self.filterSize-1] = np.asarray([worldPoint[0,0],worldPoint[1,0],worldPoint[2,0]])
-                self.worldTarget = np.mean(self.buff,1)
-            '''
-            if self.tapeLocation != None:
-                dist = self.distance(worldPoint,self.tapeLocation)
-                if dist < 0.35 and dist > 0.15:
-                    loc = self.tracker.tape2World([x,y,-predictedZ],self.yaw,[self.tapeLocation[0],self.tapeLocation[1],0])
-                    loc = self.weightedUpdate(worldPoint,loc)
-                    rospy.logwarn("Fixing location to ..."+str(loc))
-            '''
+                    self.platformBuff[:,i] = self.platformBuff[:,i+1]
+                self.platformBuff[:,self.filterSize-1] = np.asarray([worldPoint[0,0],worldPoint[1,0],self.worldTarget[2]])
+                self.worldTarget = np.mean(self.platformBuff,1)
             self.track.landMark = (self.worldTarget[0],self.worldTarget[1],0.0,1.0)
         else:
             self.track.landMark = (0,0,0,0.0)
@@ -108,9 +134,14 @@ class PIDHoverDirective(AbstractDroneDirective):
         if self.lastTime == 0:
             self.rollError = 0
             self.pitchError = 0
+            self.zError = 0
+            self.yawError = 0
         else:
             self.rollError = self.currentTarget[0]
             self.pitchError = self.currentTarget[1]
+            self.zError = zError
+            self.yawError = theta
+
         if (self.tracker.translation[0] == self.lastLocation[0] and self.tracker.translation[1] == self.lastLocation[1] and self.lastLocation[2] == self.tracker.translation[2]):
             #self.rollError = 0
             #self.pitchError = 0
@@ -118,7 +149,9 @@ class PIDHoverDirective(AbstractDroneDirective):
         self.dt = (self.currentTime - self.lastTime)/1000.
 
         self.totalError = [self.totalError[0]+self.rollError*self.dt, 
-                        self.totalError[1]+self.pitchError*self.dt,0]
+                        self.totalError[1]+self.pitchError*self.dt,
+                        self.totalError[2]+self.yawError*self.dt,0]
+
         pRoll = -self.Kp*(self.rollError)
         iRoll = -self.Ki*(self.totalError[0])
         dRoll = -self.Kd*((self.rollError-self.lastError[0])/self.dt)
@@ -127,13 +160,24 @@ class PIDHoverDirective(AbstractDroneDirective):
         iPitch = self.Ki*(self.totalError[1])
         dPitch = self.Kd*((self.pitchError-self.lastError[1])/self.dt)
 
+        pYaw = self.KpYaw*(self.yawError)
+        iYaw = self.KiYaw*(self.totalError[2])
+        dYaw = self.KdYaw*((self.yawError-self.lastYawError)/self.dt)
+
         self.lastError = self.currentTarget
+        self.lastYawError = self.yawError
+
+        pHeight = self.Kpz*(self.zError)
+
         self.lastTime = self.currentTime
         
         roll = pRoll +iRoll+dRoll
         pitch = pPitch + iPitch + dPitch
+        yaw = pYaw + iYaw + dYaw
 
-        if (abs(self.rollError) <= self.waitDist and abs(self.pitchError) <=self.waitDist and radius != None):
+        zVel = pHeight
+        
+        if (abs(self.rollError) <= self.waitDist and abs(self.pitchError) <=self.waitDist and abs(self.zError) <= self.waitDist):# and len(circles) != 0):
             directiveStatus = 1
         else:
             directiveStatus = 0
@@ -142,10 +186,19 @@ class PIDHoverDirective(AbstractDroneDirective):
         roll = -1 if roll<-1 else roll
         pitch = 1 if pitch>1 else pitch
         pitch = -1 if pitch<-1 else pitch
+        yaw = -1 if yaw <-1 else yaw
+        yaw = 1 if yaw>1 else yaw
+        zVel = -1 if zVel <-1 else zVel
+        zVel = 1 if zVel>1 else zVel
+
         #rospy.logwarn("roll: "+str(self.tracker.roll))
         #rospy.logwarn("pitch: "+str(self.tracker.pitch))
         #rospy.logwarn(directiveStatus)
-        return directiveStatus, (roll, pitch, 0, 0), segImage, None,self.moveTime, self.waitTime,None
+        #rospy.logwarn(self.zError)
+        #rospy.logwarn("zError: "+str(self.zError))
+        rospy.logwarn("yaw: " +str(self.currentYaw))
+        rospy.logwarn("yawErr: "+str(self.yawError))
+        return directiveStatus, (roll, pitch, yaw, zVel), image, None,self.moveTime, self.waitTime,None
 
 
     # This method is called by the state machine when it considers this directive finished
@@ -167,7 +220,8 @@ class PIDHoverDirective(AbstractDroneDirective):
         self.lastTime = 0
         self.rollError = 0
         self.pitchError = 0
-        self.lastError = [0,0]
-        self.totalError = [0,0,0]
+        self.lastError = [0,0,0]
+        self.lastYawError = 0
+        self.totalError = [0,0,0,0]
 
 

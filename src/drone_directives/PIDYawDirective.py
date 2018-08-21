@@ -61,9 +61,25 @@ class PIDYawDirective(AbstractDroneDirective):
     def RetrieveNextInstruction(self, image, navdata):
 
         segImage, radius, center = self.processVideo.RecognizeShape(image, 'orange',(None,None))
-        self.currentYaw = self.tracker.yaw
+        blue = self.processVideo.detectColor(image,'blue','segmented')
+        lines,blueImg = self.processVideo.MultiShowLine(blue)
+        bestTheta = None
+        minDist = -1
+        for line in lines:
+            theta = line[0]
+            theta = -theta
+            tapeCenter = line[1]
+            dist = self.distance(center,tapeCenter)
+            if minDist == -1 or dist<minDist:
+                minDist = dist
+                bestTheta = theta
+        if bestTheta != None:
+            self.currentYaw = bestTheta
+        else:
+            self.currentYaw = 0
+
         #Calculate closest rotation to get to target angle
-        theta = ((self.targetYaw - self.currentYaw)%360 + 360)%360
+        theta = ((0 - self.currentYaw)%360 + 360)%360
         theta = (theta-360) if (theta >180) else theta
         loc = (0,0,0,0)
         #circle detection
@@ -151,7 +167,7 @@ class PIDYawDirective(AbstractDroneDirective):
         #rospy.logwarn("roll: "+str(self.tracker.roll))
         #rospy.logwarn("pitch: "+str(self.tracker.pitch))
         rospy.logwarn(directiveStatus)
-        return directiveStatus, (roll, pitch, yaw, 0), segImage, None,self.moveTime, self.waitTime,None
+        return directiveStatus, (roll, pitch,0, 0), segImage, None,self.moveTime, self.waitTime,None
 
 
     # This method is called by the state machine when it considers this directive finished
