@@ -44,8 +44,8 @@ class ProcessVideo(object):
             hsv_boundaries = [( [0, s_min, 170],[10, s_max, 255] )]
             hsv_boundaries2 = [([174, s_min, 180],[180, s_max, 255])]
             """
-            hsv_boundaries = [( [0, 75, 120],[15, 255, 255] )]
-            hsv_boundaries2 = [([178, 75, 120],[180, 255, 255])]
+            hsv_boundaries = [( [0, 30, 40],[25, 255, 160] )]
+            hsv_boundaries2 = [([160, 30, 40],[180, 255, 160])]
             #hsv_boundaries2 = [([174, 61, 120],[180, 255, 255])]
             lower=array(hsv_boundaries[0][0], dtype = "uint8")
             upper= array(hsv_boundaries[0][1],dtype = "uint8")
@@ -54,7 +54,7 @@ class ProcessVideo(object):
 
         elif(color=='front orange'):
             #0 50 0 25, 254 255
-            hsv_boundaries = [( [0, 55, 10],[60, 254, 255] )]
+            hsv_boundaries = [( [0, 55, 10],[60, 255, 255] )]
             #168 50 0,180 254 255
             #lower  hsv boundary #170 140 150,179 255 255
             hsv_boundaries2 = [([168, 70, 10],[180, 254, 255])]
@@ -67,12 +67,22 @@ class ProcessVideo(object):
             hsv_boundaries = [ ([100,50,70],[140,255,255])]
             lower=array(hsv_boundaries[0][0], dtype = "uint8")
             upper= array(hsv_boundaries[0][1],dtype = "uint8")
-        
+        elif(color=='darkblue'):
+            hsv_boundaries = [ ([90,25,70],[135,255,250])]
+            lower=array(hsv_boundaries[0][0], dtype = "uint8")
+            upper= array(hsv_boundaries[0][1],dtype = "uint8")
         elif(color=='green'):
             hsv_boundaries = [ ([40, 70, 10],[70, 190, 254])]
             lower=array(hsv_boundaries[0][0], dtype = "uint8")
             upper= array(hsv_boundaries[0][1],dtype = "uint8")
 
+        elif(color=='white'):
+            #duct tape
+            #hsv_boundaries = [ ([161, 68, 127],[171, 209, 255])]
+            # printed
+            hsv_boundaries = [ ([10,10,10 ],[160,160,160])]
+            lower=array(hsv_boundaries[0][0], dtype = "uint8")
+            upper= array(hsv_boundaries[0][1],dtype = "uint8")
         elif(color=='pink'):
             #duct tape
             #hsv_boundaries = [ ([161, 68, 127],[171, 209, 255])]
@@ -80,7 +90,6 @@ class ProcessVideo(object):
             hsv_boundaries = [ ([161, 68, 127],[172, 255, 255])]
             lower=array(hsv_boundaries[0][0], dtype = "uint8")
             upper= array(hsv_boundaries[0][1],dtype = "uint8")
-
         elif(color=='yellow'):
             hsv_boundaries = [ ([17, 10, 100],[32, 188, 255])]
             lower=array(hsv_boundaries[0][0], dtype = "uint8")
@@ -98,7 +107,10 @@ class ProcessVideo(object):
             raise Exception("Color not recognized")
 
 	#convert bgr to hsv image for color segmentation
-        hsv_image=cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        if color == 'white':
+            hsv_image = image
+        else:
+            hsv_image=cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         #find colors within the boundaries for each pixel,returns binary image
         mask = mask1 = cv2.inRange(hsv_image,lower,upper)
 
@@ -111,7 +123,10 @@ class ProcessVideo(object):
 	#this sets any pixel in mask != 0 to its hsv color value from unsegmented image
         hsv_output = cv2.bitwise_and(hsv_image,hsv_image, mask = mask)
         #this converts the image from hsv to bgr
-        segmentedImage = cv2.cvtColor(hsv_output,cv2.COLOR_HSV2BGR)
+        if color == 'white':
+            segmentedImage = hsv_output
+        else:
+            segmentedImage = cv2.cvtColor(hsv_output,cv2.COLOR_HSV2BGR)
         #we put a circle in the center of the image 
         #cv2.circle(segmentedImage,(numcols/2,numrows/2),4,150,1)
         
@@ -839,104 +854,136 @@ class ProcessVideo(object):
         return segmentedImage, None, center
 
 
-    def RecognizeShape(self,image, shapeColor,threshold = 0.2):
-        #bottom camera f = 408.0038
-        #first segment the image by color of circle
-        
-        segmentedImage,_,binaryImage = self.DetectColor(image, shapeColor,"all")
-        #segmentedImage,binaryImage = self.DetectOrange(image)
-
-        numrows,numcols,channels=image.shape
-        imagePerimeter = 2*numrows+2*numcols
-
-        contours = cv2.findContours(binaryImage.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        circles = []
-        #use contours[0] for opencv2 or contours[1] for opencv3
-        contours = contours[1]
-        for shape in contours:
-            isCircle = True
-            perimeter = cv2.arcLength(shape,True)
-            #if the shape is too small, it is most likely noise, and we wish to disregard it
-            if perimeter > (0.05)*imagePerimeter:
-            #finds shapes that are within a certain percentage of original shape perimeter
-                vertices = cv2.approxPolyDP(shape, 0.009* perimeter,True)
-                #vertices = cv2.approxPolyDP(shape, 0.009 * perimeter,True)
-                numVertices = len(vertices)
-                #the shape is determined by the number of vertices,i.e. a triangle has 3, square has 4, 
-                #pentagon has 5, and anything above will be considered circular.
-                if numVertices > 5:
-                    M = cv2.moments(vertices)
-                    if(M["m00"] != 0):
-                        cx = int(M["m10"] / M["m00"])
-                        cy= int(M["m01"] / M["m00"])
-                        #center of circle
-                        center = (cx,cy)
-                        numPoints = 0
-                        averageRadius = 0
-                        #we want to loop through every vertex on circle and measure distance to center
-                        for points in vertices:
-                            point = points[0]
-                            #this will check if the circle is being cut off by image boundary
-                            if(point[0] < 0 or point[0] >= numcols-0 or point[1] < 0 or point[1] >= numrows-0):
-                                isCircle = False
-                                break
-                            else:
-                                dist = (point - center)
-                                currentRadius = sqrt(inner(dist,dist))
-                                averageRadius += currentRadius
-                                numPoints += 1
-                                
-                        #we want to calculate the average radius and return it as # of pixels
-                        if(isCircle):
-                            averageRadius = (averageRadius/numPoints)
-                            for points in vertices:
-                                point = points[0]
-                                dist = (point - center)
-                                currentRadius = sqrt(inner(dist,dist))
-                                deltaRadius = abs(currentRadius - averageRadius)
-                                if deltaRadius > threshold*averageRadius:
-                                    isCircle = False
-                                    break
-                               
-                        if isCircle:
-                            #if lastLocation == (None,None):
-                            #draw circle onto image
-                            cv2.circle(segmentedImage, center,1,(255,255,255),-1)
-                            cv2.circle(segmentedImage,center, int(averageRadius),(255,255,255),4)
-                            #cv2.drawContours(segmentedImage,[vertices],-1,(0,255,0),2)
-                            #this will return after the first circle is detected
-                            #return segmentedImage, averageRadius, center
-                            circles.append((center,averageRadius))
-                            
-        '''
-        if circles[0] != None:
-            distances = [None]
-            for circle in circles:
-                if distances[0]==None:
-                    x = (circle[0][0]-lastLocation[0])
-                    x=x*x
-                    y = circle[0][1]-lastLocation[1]
-                    y = y*y
-                    distances = [sqrt(x+y)]
+    def identifyCircle(self,circle,dims,threshold):
+        rows = dims[0]
+        cols = dims[1]
+        peri = cv2.arcLength(circle, True)
+        #remove tiny noise (less than 1% of possible image)
+        if peri < 0.01*(2*rows+2*cols):
+            return None
+        approx = cv2.approxPolyDP(circle, 0.03 * peri, True)
+        if len(approx) < 5:
+            return None
+        M = cv2.moments(circle)
+        if(M["m00"] != 0):
+            cx = int(M["m10"] / M["m00"])
+            cy= int(M["m01"] / M["m00"])
+            #center of circle
+            center = (cx,cy)
+            numPoints = 0
+            averageRadius = 0
+            #we want to loop through every vertex on circle and measure distance to center
+            for points in circle:
+                point = points[0]
+                #this will check if the circle is being cut off by image boundary
+                if(point[0] < 0 or point[0] >= cols-0 or point[1] < 0 or point[1] >= rows-0):
+                    return None
                 else:
-                    x = (circle[0][0]-lastLocation[0])
-                    x=x*x
-                    y = circle[0][1]-lastLocation[1]
-                    y = y*y
-                    distances.append(sqrt(x+y))
-            circleIndex = argmin(distances)
-            nearestCircle = circles[circleIndex]
-            center = nearestCircle[0]
-            averageRadius = nearestCircle[1]
-            #draw circle onto image
-            cv2.circle(segmentedImage, center,1,(255,255,255),-1)
-            cv2.circle(segmentedImage,center, int(averageRadius),(255,255,255),4)
-            #cv2.drawContours(segmentedImage,[vertices],-1,(0,255,0),2)
-            #this will return after the first circle is detected
-        '''
-        return segmentedImage, circles
+                    dist = (point - center)
+                    currentRadius = sqrt(inner(dist,dist))
+                    averageRadius += currentRadius
+                    numPoints += 1
+            averageRadius = averageRadius/numPoints
+            for points in circle:
+                point = points[0]
+                #this will check if the circle is being cut off by image boundary
+                dist = (point - center)
+                currentRadius = sqrt(inner(dist,dist))
+                deltaRadius = abs(currentRadius - averageRadius)
+                if deltaRadius > threshold*averageRadius:
+                    return None
+            return (center,averageRadius)
 
-            #if we have looped through every object and dont see a circle, return None
+    def detectCircles(self,img,threshold = 0.2):
+        img = img.copy()
+        _,possibleCircles,_ = cv2.findContours(img,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+        circles = []
+        for circle in possibleCircles:
+            detectedCircle = self.identifyCircle(circle,img.shape,threshold)
+            if detectedCircle is not None:
+                circles.append(detectedCircle)
+                cv2.circle(img,detectedCircle[0], int(detectedCircle[1]),150,4)
+        return img,circles
+
+    def detectLines(self,image,lineWidth):
+        image = image.copy()
+        edges = cv2.Canny(image,50,200,3)
+        allLines = cv2.HoughLines(edges,1,pi/180, int(2*lineWidth))
+        lines = []    
+        if allLines is not None:
+            for line in allLines:
+                lines.append(line)
+            
+        filteredLines = []
+        numLines = 0
+        while len(lines) != 0:
+            line = lines.pop(0)
+            rho = line[0,0]
+            theta = line[0,1]
+            loopDist = rad2deg(theta) if rad2deg(theta) <= 90 else 180-rad2deg(theta)
+            filteredLines.append([])
+            filteredLines[numLines].append(line)
+            pops = 0
+            for index in range(len(lines)):
+                otherLine = lines[index-pops]
+                r = otherLine[0,0]
+                t = otherLine[0,1]
+                loopDist = rad2deg(t)+loopDist if rad2deg(t)<=90 else loopDist+180-rad2deg(t)
+                if min(abs(rad2deg(t-theta)),abs(loopDist)) < 6 and abs(rho-r) < 2*lineWidth:
+                    filteredLines[numLines].append(lines.pop(index-pops))
+                    pops+=1
+            numLines+=1
+        for lineSet in filteredLines:
+            average = zeros((1,2))
+            x = 0
+            y = 0
+            for line in lineSet:
+                average[0,0]+=line[0,0]
+                theta = rad2deg(line[0,1])
+                theta = deg2rad(theta*2.0)
+                x += cos(theta)
+                y += sin(theta)
+            x = x/len(lineSet)
+            y = y/len(lineSet)
+            angle = rad2deg(arctan2(y,x))/2
+            if angle <0:
+                angle = angle+180
+            average[0,1] = angle
+            average[0,0] = average[0,0]/len(lineSet)
+            #rospy.logwarn(average)
+            lines.append(average)
+            
+        for line in lines:
+            r = line[0,0]
+            theta = deg2rad(line[0,1])
+            # convert angles from -90 to 90
+            #90 = clockwise, -90 counter-clockwise
+            line[0,1] = 180-line[0,1]if line[0,1]%90 < line[0,1] else -line[0,1]
+
+            a = cos(theta)
+            b = sin(theta)
+            x0 = a*r
+            y0 = b*r
+            x1 = int(x0 + 1000*(-b))
+            y1 = int(y0 + 1000*(a))
+            x2 = int(x0 - 1000*(-b))
+            y2 = int(y0 - 1000*(a))
+            cv2.line(image,(x1,y1), (x2,y2), 150,3)
+        return image,lines
+
+    def line2PointDist(self,rho,theta,point):
+        theta = -theta
+        theta = deg2rad(theta+180) if theta<0 else deg2rad(theta)
+        x0 = point[0]
+        y0 = point[1]
+        a = cos(theta)
+        b = sin(theta)
+        c = -rho
+        #print("X: "+str((b*(b*x0-a*y0)-a*c)/(a**2+b**2)))
+
+        #print("Y: "+str((a*(-b*x0+a*y0)-b*c)/(a**2+b**2)))
+
+        return abs((a*x0)+(b*y0)+c)/((a**2+b**2)**(0.5))
 
 
     # Given an image, a point (x,y), and a width/height,

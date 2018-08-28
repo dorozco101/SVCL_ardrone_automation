@@ -48,7 +48,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
         
         self.objectName = "NASA Airplane"
         self.startingAngle = 0
-        self.circleRadius = 1.1 #meters
+        self.circleRadius = 1.15 #meters
         self.circlePoints = 8 #numbers of points equally spaced along circle
         self.startTime = 0
         # backpack: 120/-55/95
@@ -125,7 +125,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
             #for index in range(1):
                 point = points[index]
                 point[2] = 1.2
-                pidDirectives.append( PIDHoverDirective(self.tracker,point[:3],index) )
+                pidDirectives.append( PIDHoverDirective(self.tracker,point[:3],point[3],index) )
                 pidDirectives[index].Reset()
                 alg.append((pidDirectives[index],40))
                 alg.append(( SetCameraDirective("FRONT"), 1 ))

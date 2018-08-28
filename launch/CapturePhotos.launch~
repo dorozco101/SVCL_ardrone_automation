@@ -10,8 +10,8 @@
 	    <param name="flight_without_shell" value="0" /> <!-- Changes internal controller gains if we are flying without the propeller guard -->
 
 	    <param name="navdata_demo" value="0" />
-            <param name="realtime_navdata" value="True" />
-            <param name="realtime_video" value="False" />
+            <param name="realtime_navdata" value="False" />
+            <param name="realtime_video" value="True" />
             <param name="looprate" value="30" />
         <!--  <param name="euler_angle_max" value="0.16" /> -->
 	    <param name="altitude_max" value="2200" /> 

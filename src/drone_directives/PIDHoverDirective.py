@@ -16,12 +16,13 @@ class PIDHoverDirective(AbstractDroneDirective):
     
     # sets up this directive
     # plrratformColor: color to hover over. Altitude is maintained
-    def __init__(self, poseTracker,target,platformNumber,waitDist=0.1):
+    def __init__(self, poseTracker,target,yaw,platformNumber,waitDist=0.1):
         
         #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005 #best
+        #self.Kp,self.Ki,self.Kd = 0.2,0.0,0.0005
         self.Kp,self.Ki,self.Kd = 0.2,0.0,0.0005
         self.Kpz = 0.1
-        self.KpYaw,self.KiYaw,self.KdYaw = 1/90,0,0
+        self.KpYaw,self.KiYaw,self.KdYaw = (2/90.),0,0
 
         self.moveTime = 0.2
         self.waitTime = 0.0
@@ -62,8 +63,18 @@ class PIDHoverDirective(AbstractDroneDirective):
     #
     # An image reflecting what is being done as part of the algorithm
     def RetrieveNextInstruction(self, image, navdata):
-        
-        segImage, circles = self.processVideo.RecognizeShape(image, 'test')
+        algTime = time.time()
+        image = cv2.inRange(image,np.array([200,200,200]),np.array([255,255,255]))
+        row,col = image.shape
+        img,circles = self.processVideo.detectCircles(image)
+        if len(circles) != 0:
+            circle = circles[0]
+            center = circle[0]
+            radius = circle[1]
+            lineWidth = (2*radius)*(46.0/88.0)
+            image,lines = self.processVideo.detectLines(image,int(lineWidth))
+            image = cv2.bitwise_or(image,img)
+
         bestTheta = None
         if len(circles) != 0:
             minDist = -1
@@ -82,15 +93,12 @@ class PIDHoverDirective(AbstractDroneDirective):
                     worldPoint = point
                     z = predictedZ
                     Center = center
-            blue = self.processVideo.DetectColor(image,'blue','segmented')
-            lines,blueImage = self.processVideo.MultiShowLine(blue)
-            image = blueImage
             minDist = -1
             for line in lines:
-                theta = line[0]
-                theta = theta
-                tapeCenter = line[1]
-                dist = self.distance(Center,tapeCenter)
+                line = line[0]
+                rho = line[0]
+                theta = line[1]
+                dist = self.processVideo.line2PointDist(rho,theta,center)
                 if minDist == -1 or dist<minDist:
                     minDist = dist
                     bestTheta = theta
@@ -98,9 +106,10 @@ class PIDHoverDirective(AbstractDroneDirective):
             self.currentYaw = bestTheta
         else:
             self.currentYaw = 0
+        theta = self.currentYaw
          #Calculate closest rotation to get to target angle
-        theta = (0 - self.currentYaw+360)%360
-        theta = (theta-360) if (theta >180) else theta
+        #theta = (self.currentYaw+360)%360
+        #theta = (theta-360) if (theta >180) else theta
 
         zError = 0
         loc = (0,0,0,0)
@@ -127,6 +136,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         #rospy.logwarn("world target: " + str(self.worldTarget))
         self.track.landMark = (self.worldTarget[0],self.worldTarget[1],0.0,1.0)
         self.track.loc = loc
+        self.track.yaw = (0,0)
         self.pub.publish(self.track)
         self.currentTarget = self.tracker.world2Body(self.worldTarget)
         self.currentTime = time.time()
@@ -177,7 +187,7 @@ class PIDHoverDirective(AbstractDroneDirective):
 
         zVel = pHeight
         
-        if (abs(self.rollError) <= self.waitDist and abs(self.pitchError) <=self.waitDist and abs(self.zError) <= self.waitDist):# and len(circles) != 0):
+        if (abs(self.rollError) <= self.waitDist and abs(self.pitchError) <=self.waitDist and abs(self.zError) <= self.waitDist) and abs(self.yawError) <= 6:# and len(circles) != 0):
             directiveStatus = 1
         else:
             directiveStatus = 0
@@ -196,8 +206,9 @@ class PIDHoverDirective(AbstractDroneDirective):
         #rospy.logwarn(directiveStatus)
         #rospy.logwarn(self.zError)
         #rospy.logwarn("zError: "+str(self.zError))
-        rospy.logwarn("yaw: " +str(self.currentYaw))
+        #rospy.logwarn("yaw: " +str(self.currentYaw))
         rospy.logwarn("yawErr: "+str(self.yawError))
+        rospy.logwarn("algTime: "+str(time.time()-algTime))
         return directiveStatus, (roll, pitch, yaw, zVel), image, None,self.moveTime, self.waitTime,None
 
 
@@ -206,13 +217,15 @@ class PIDHoverDirective(AbstractDroneDirective):
         self.Reset()
         #tapeLocation = self.tracker.body2World(self.target)[:,0]
         #loc = self.tracker.tape2World([x,y,-predictedZ],self.yaw,[tapeLocation[0],tapeLocation[1],0])
-        if (self.platformNumber % 3 == 0):
-            loc = np.asarray([self.target]).T
-            loc[2] = 1.0
-            rospy.logwarn("Reseting location to" +str(loc))
-            loc = self.weightedUpdate(self.worldPoint,loc)
-            self.track.loc = loc
-            self.pub.publish(self.track)
+        #if (self.platformNumber%2==0):
+        loc = np.asarray([self.target]).T
+        loc[2] = 1.0
+        loc = (loc[0],loc[1],loc[2],1.0)
+        rospy.logwarn("Reseting location to" +str(loc))
+        #loc = self.weightedUpdate(self.worldPoint,loc)
+        self.track.loc = loc
+        self.track.yaw = (self.targetYaw,1.0)
+        self.pub.publish(self.track)
 
     def Reset(self):
         self.dt = 0

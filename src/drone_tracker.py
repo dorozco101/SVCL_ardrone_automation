@@ -18,7 +18,7 @@ class DroneTracker(object):
     def __init__(self):
         
         super(DroneTracker, self).__init__()
-        self.stateSub = rospy.Subscriber('/ardrone/predictedPose',filter_state,self.callback)
+        self.stateSub = rospy.Subscriber('/ardrone/predictedPose',filter_state,self.callback,queue_size = 10)
         self.tracker = Tracker()
         self.trackerPub = rospy.Publisher('ardrone/tracker',tracker)
 
