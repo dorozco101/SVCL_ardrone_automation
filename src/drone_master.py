@@ -48,7 +48,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
         
         self.objectName = "NASA Airplane"
         self.startingAngle = 0
-        self.circleRadius = 1.15 #meters
+        self.circleRadius = 1 #meters
         self.circlePoints = 8 #numbers of points equally spaced along circle
         self.startTime = 0
         # backpack: 120/-55/95
@@ -119,15 +119,20 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
                 alg.append((pidDirectives[index],40))
                 alg.append(( SetCameraDirective("FRONT"), 1 ))
                 alg.append(( IdleDirective("Pause for setting camera to front"), 25 ))
-                alg.append(( self.photoDirective, 1 ))
+                alg.append(( self.photoDirective, 30 ))
                 alg.append((SetCameraDirective("BOTTOM"), 1 ))
                 alg.append(( IdleDirective("Pause for setting camera to bottom"), 25 ))
             #alg.append( ( LandDirective(),1) )
             algCycles = 1
-            
+            end = [
+            ( SetCameraDirective("FRONT"), 1 ), ( IdleDirective("Pause for setting camera to bottom"), 25 ),
+            ( self.photoDirective, 1 ),
+            ( LandDirective(), 1), ( IdleDirective("Pause for land"), 25 ),
+            ( self.photoDirective, 1, None, "SavePhotos")
+            ]
             #algCycles = -1
 
-            self.MachineSwitch( init, alg, algCycles, None, "Basic Drone State Machine")
+            self.MachineSwitch( init, alg, algCycles, end, "Basic Drone State Machine")
 
         elif key == ord('p'):
 

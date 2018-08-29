@@ -23,8 +23,8 @@ class DroneTracker(object):
         self.trackerPub = rospy.Publisher('ardrone/tracker',tracker)
 
     def callback(self,state):
-        #self.translation = [1.75*state.x,1.4*state.y,state.z]
-        self.translation = [state.x*1.1,state.y*1.1,state.z]
+        self.translation = [1*state.x,1*state.y,state.z]
+        #self.translation = [state.x*1.1,state.y*1.1,state.z]
         self.yaw = -state.yaw
         self.roll = state.roll
         self.pitch = state.pitch

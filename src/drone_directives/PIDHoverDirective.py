@@ -72,7 +72,7 @@ class PIDHoverDirective(AbstractDroneDirective):
             circle = circles[0]
             center = circle[0]
             radius = circle[1]
-            lineWidth = (2*radius)*(46.0/88.0)
+            lineWidth = (2*radius)*(40.0/88.0)
             image,lines = self.processVideo.detectLines(image,int(lineWidth))
             image = cv2.bitwise_or(image,img)
 
@@ -224,7 +224,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         #loc = self.tracker.tape2World([x,y,-predictedZ],self.yaw,[tapeLocation[0],tapeLocation[1],0])
         #if (self.platformNumber%2==0):
         loc = np.asarray([self.target]).T
-        loc[2] = 1.0
+        loc[2] = 1.2
         loc = (loc[0],loc[1],loc[2],1.0)
         rospy.logwarn("Reseting location to" +str(loc))
         #loc = self.weightedUpdate(self.worldPoint,loc)

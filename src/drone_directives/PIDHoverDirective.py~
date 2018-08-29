@@ -21,7 +21,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005 #best
         #self.Kp,self.Ki,self.Kd = 0.2,0.0,0.0005
         self.Kp,self.Ki,self.Kd = 0.21,0.0,0.0006
-        self.Kp,self.Ki,self.Kd = 0.17,0.0,0.000
+        self.Kp,self.Ki,self.Kd = 0.17,0.0,0.0004
         self.Kpz = 0.1
         self.KpYaw,self.KiYaw,self.KdYaw = (2/90.),0,0
         self.targetYaw = -yaw
@@ -224,7 +224,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         #loc = self.tracker.tape2World([x,y,-predictedZ],self.yaw,[tapeLocation[0],tapeLocation[1],0])
         #if (self.platformNumber%2==0):
         loc = np.asarray([self.target]).T
-        loc[2] = 1.0
+        loc[2] = 1.2
         loc = (loc[0],loc[1],loc[2],1.0)
         rospy.logwarn("Reseting location to" +str(loc))
         #loc = self.weightedUpdate(self.worldPoint,loc)
