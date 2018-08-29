@@ -31,7 +31,7 @@
 	  <node name="KeyboardController" pkg="svcl_ardrone_automation" type="keyboard_controller.py" required="true"/> --> 
 
 	<!-- Launches the state estimate node -->
-	  <node name="StateEstimation" pkg="svcl_ardrone_automation" type="drone_stateestimation" required="true" /> <!-- launch-prefix="xterm -e gdb -args"/> --> 
+	  <node name="StateEstimation" pkg="svcl_ardrone_automation" type="drone_stateestimation" required="true"/> <!-- launch-prefix="xterm -e gdb -args"-->
 
 	<!-- Launches the video controller -->
 	<node name="DroneMaster" pkg="svcl_ardrone_automation" type="drone_master.py" required="true"/> -->

@@ -20,10 +20,11 @@ class PIDHoverDirective(AbstractDroneDirective):
         
         #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005 #best
         #self.Kp,self.Ki,self.Kd = 0.2,0.0,0.0005
-        self.Kp,self.Ki,self.Kd = 0.2,0.0,0.0005
+        self.Kp,self.Ki,self.Kd = 0.21,0.0,0.0006
+        self.Kp,self.Ki,self.Kd = 0.17,0.0,0.0004
         self.Kpz = 0.1
         self.KpYaw,self.KiYaw,self.KdYaw = (2/90.),0,0
-
+        self.targetYaw = -yaw
         self.moveTime = 0.2
         self.waitTime = 0.0
         self.tracker = poseTracker
@@ -98,7 +99,7 @@ class PIDHoverDirective(AbstractDroneDirective):
                 line = line[0]
                 rho = line[0]
                 theta = line[1]
-                dist = self.processVideo.line2PointDist(rho,theta,center)
+                dist = self.processVideo.line2PointDist(rho,theta,Center)
                 if minDist == -1 or dist<minDist:
                     minDist = dist
                     bestTheta = theta
@@ -113,6 +114,7 @@ class PIDHoverDirective(AbstractDroneDirective):
 
         zError = 0
         loc = (0,0,0,0)
+        
         #circle detection
         #rospy.logwarn("x: "+str(self.tracker.translation[0])+" y: "+str(self.tracker.translation[1]))
         if len(circles) != 0:
@@ -136,7 +138,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         #rospy.logwarn("world target: " + str(self.worldTarget))
         self.track.landMark = (self.worldTarget[0],self.worldTarget[1],0.0,1.0)
         self.track.loc = loc
-        self.track.yaw = (0,0)
+        self.track.yaw = (self.targetYaw,0.0)
         self.pub.publish(self.track)
         self.currentTarget = self.tracker.world2Body(self.worldTarget)
         self.currentTime = time.time()
@@ -209,6 +211,9 @@ class PIDHoverDirective(AbstractDroneDirective):
         #rospy.logwarn("yaw: " +str(self.currentYaw))
         rospy.logwarn("yawErr: "+str(self.yawError))
         rospy.logwarn("algTime: "+str(time.time()-algTime))
+        if abs(self.rollError) > self.waitDist or abs(self.pitchError) > self.waitDist:
+            yaw = 0
+            rospy.logwarn("not close enough to adjust yaw")
         return directiveStatus, (roll, pitch, yaw, zVel), image, None,self.moveTime, self.waitTime,None
 
 

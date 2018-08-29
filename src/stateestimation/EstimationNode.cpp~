@@ -42,7 +42,7 @@
 #include "MapView.h"
 #include <sys/stat.h>
 #include <string>
-
+#include <iostream>
 using namespace std;
 
 pthread_mutex_t EstimationNode::logIMU_CS = PTHREAD_MUTEX_INITIALIZER;
@@ -258,19 +258,24 @@ void EstimationNode::trackerCb(const svcl_ardrone_automation::tracker& msg)
 {
 	landMark = msg.landMark;
 	loc = msg.loc;
+    cout<<"loc: " << loc[0] << loc[1]<<loc[2]<<" "<<loc[3] <<"\n";
 	yaw = msg.yaw;
+    cout<<"yaw: "<<yaw[0]<<" "<<yaw[1]<<"\n";
     svcl_ardrone_automation::filter_state s = filter->getCurrentPoseSpeed();
     if(yaw[1] != 0 && loc[3] !=0)
 	{
         filter->reset(loc[0],loc[1],loc[2],yaw[0]);
+        //filter->reset(0,0,0,0);
         ptamWrapper->Reset();
 	}
     else if(loc[3] != 0){ //keep yaw same
         filter->reset(loc[0],loc[1],loc[2],s.yaw);
+        //filter->reset(0,0,0,0);
         ptamWrapper->Reset();
     }
     else if(yaw[1] !=0){//keep x,y,z same
         filter->reset(s.x,s.y,s.z,yaw[0]);
+        //filter->reset(0,0,0,0);
         ptamWrapper->Reset();
     }
 

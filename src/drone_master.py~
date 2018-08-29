@@ -107,24 +107,13 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
             #pidDirectives[0].Reset()
             alg = []
             pidDirectives=[]
-            '''
-            alg = [(pidDirectives[0],30)]
-            flightAltitude = 1360 + self.zOffset
-            objectAltitude = 1360 + self.zOffset
-            init = [
-                ( SetupDirective(), 1), ( IdleDirective("Pause for setup"), 10 ),
-                ( FlatTrimDirective(), 1), ( IdleDirective("Pause for flat trim"), 10 ),
-                ( SetCameraDirective("BOTTOM"), 1 ), ( IdleDirective(" Pause for seting camera"), 10 ),
-                ( TakeoffDirective(), 1), ( IdleDirective("Pause for takeoff"), 120 )
-                #( ReachAltitudeDirective(flightAltitude, 85), 2)
-                ]
-
-            '''
+            
             init = None
             for index in range(len(points)):
             #for index in range(1):
                 point = points[index]
                 point[2] = 1.2
+                rospy.logwarn(point[3])
                 pidDirectives.append( PIDHoverDirective(self.tracker,point[:3],point[3],index) )
                 pidDirectives[index].Reset()
                 alg.append((pidDirectives[index],40))
@@ -134,7 +123,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
                 alg.append((SetCameraDirective("BOTTOM"), 1 ))
                 alg.append(( IdleDirective("Pause for setting camera to bottom"), 25 ))
             #alg.append( ( LandDirective(),1) )
-            algCycles = -1
+            algCycles = 1
             
             #algCycles = -1
 
