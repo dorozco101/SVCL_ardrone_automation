@@ -7,7 +7,6 @@ class Tracker(object):
         self.yaw = yaw
         self.translation  = translation
         self.cameraTranslation = cameraTranslation
-        self.cameraTranslation = [0,0,0]
         self.updateTransforms()
 
     def reset(self):

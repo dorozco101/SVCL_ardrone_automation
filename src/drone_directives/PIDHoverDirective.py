@@ -21,7 +21,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005 #best
         #self.Kp,self.Ki,self.Kd = 0.2,0.0,0.0005
         self.Kp,self.Ki,self.Kd = 0.21,0.0,0.0006
-        self.Kp,self.Ki,self.Kd = 0.17,0.0,0.0004
+        #self.Kp,self.Ki,self.Kd = 0.17,0.0,0.0004
         self.Kpz = 0.1
         self.KpYaw,self.KiYaw,self.KdYaw = (2/90.),0,0
         self.targetYaw = -yaw
@@ -44,7 +44,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         self.heightBuff = np.zeros(4)
         self.worldPoint = np.asarray([[0,0,0]]).T
         self.lastLocation = self.tracker.translation
-        #the amount of weight we would like to put towards correcting the drones drift by recognizing landmarks
+        #the amount of weight we would like to put towards correcting the drones drift by recognizing landmarksgggs
         self.correctionRatio = 0.9999
     def distance(self,x,y):
         dist = (x[0]-y[0])**2+(x[1]-y[1])**2
@@ -64,7 +64,7 @@ class PIDHoverDirective(AbstractDroneDirective):
     #
     # An image reflecting what is being done as part of the algorithm
     def RetrieveNextInstruction(self, image, navdata):
-        algTime = time.time()
+        #algTime = time.time()
         image = cv2.inRange(image,np.array([200,200,200]),np.array([255,255,255]))
         row,col = image.shape
         img,circles = self.processVideo.detectCircles(image)
@@ -210,7 +210,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         #rospy.logwarn("zError: "+str(self.zError))
         #rospy.logwarn("yaw: " +str(self.currentYaw))
         rospy.logwarn("yawErr: "+str(self.yawError))
-        rospy.logwarn("algTime: "+str(time.time()-algTime))
+        #rospy.logwarn("algTime: "+str(time.time()-algTime))
         if abs(self.rollError) > self.waitDist or abs(self.pitchError) > self.waitDist:
             yaw = 0
             rospy.logwarn("not close enough to adjust yaw")

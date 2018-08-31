@@ -137,6 +137,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
         elif key == ord('p'):
 
             pictureName = self.pictureManager.Capture(self.cv_image)
+            self.SaveCachePictures()
             rospy.logwarn("Saved picture")
         # land (32 => spacebar)
         elif key == 32:
