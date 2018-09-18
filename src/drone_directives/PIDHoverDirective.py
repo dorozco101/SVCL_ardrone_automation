@@ -16,12 +16,12 @@ class PIDHoverDirective(AbstractDroneDirective):
     
     # sets up this directive
     # plrratformColor: color to hover over. Altitude is maintained
-    def __init__(self, poseTracker,target,yaw,platformNumber,waitDist=0.1):
+    def __init__(self, poseTracker,target,yaw,platformNumber,waitDist=0.13):
         
         #self.Kp,self.Ki,self.Kd = 0.1,20.0,0.0005 #best
         #self.Kp,self.Ki,self.Kd = 0.2,0.0,0.0005
-        self.Kp,self.Ki,self.Kd = 0.21,0.0,0.0006
-        #self.Kp,self.Ki,self.Kd = 0.17,0.0,0.0004
+        #self.Kp,self.Ki,self.Kd = 0.21,0.0,0.0006
+        self.Kp,self.Ki,self.Kd = 0.17,10,0.0005
         self.Kpz = 0.1
         self.KpYaw,self.KiYaw,self.KdYaw = (2/90.),0,0
         self.targetYaw = -yaw
@@ -42,6 +42,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         self.filterSize = 30
         self.platformBuff = np.repeat(np.asarray([self.worldTarget]).T,self.filterSize,axis=1)
         self.heightBuff = np.zeros(4)
+        self.yawBuff = np.zeros(4)
         self.worldPoint = np.asarray([[0,0,0]]).T
         self.lastLocation = self.tracker.translation
         #the amount of weight we would like to put towards correcting the drones drift by recognizing landmarksgggs
@@ -69,14 +70,15 @@ class PIDHoverDirective(AbstractDroneDirective):
         row,col = image.shape
         img,circles = self.processVideo.detectCircles(image)
         if len(circles) != 0:
+            #just use a circle width to filter out bad lines
             circle = circles[0]
-            center = circle[0]
             radius = circle[1]
             lineWidth = (2*radius)*(40.0/88.0)
             image,lines = self.processVideo.detectLines(image,int(lineWidth))
             image = cv2.bitwise_or(image,img)
 
         bestTheta = None
+        self.pixCoord = self.tracker.world2Camera(self.worldTarget)
         if len(circles) != 0:
             minDist = -1
             for circle in circles:
@@ -86,14 +88,21 @@ class PIDHoverDirective(AbstractDroneDirective):
                 scale = (88.0/(radius*2))/1000.0 #meters/pixel
                 x = (center[0]-self.centerx)*scale
                 y = (self.centery-center[1])*scale
-            #rospy.logwarn(self.tapeLocation)
-            #tape = self.tracker.camera2Body([x,y,-predictedZ])
+                ex = self.pixCoord[0]/scale+self.centerx
+                why = self.centery-self.pixCoord[1]/scale
+                rospy.logwarn("circle loc:"+str(ex)+","+str(why))
                 point = self.tracker.camera2World([x,y,-predictedZ])
-                dist = self.distance(point,self.worldTarget)
+                #dist = self.distance(point,self.worldTarget)
+                dist = self.distance([center[0],center[1]],[ex,why])
                 if dist < minDist or minDist == -1:
                     worldPoint = point
                     z = predictedZ
                     Center = center
+                    X = center[0]
+                    Y = center[1]
+                    minDist = dist
+            rospy.logwarn("nearest circle choosen: ("+str(X)+","+str(Y)+") out of:")
+            rospy.logwarn(circles)
             minDist = -1
             for line in lines:
                 line = line[0]
@@ -108,6 +117,10 @@ class PIDHoverDirective(AbstractDroneDirective):
         else:
             self.currentYaw = 0
         theta = self.currentYaw
+        for i in range(len(self.yawBuff)-1):
+            self.yawBuff[i]=self.yawBuff[i+1]
+        self.yawBuff[len(self.yawBuff)-1] = theta
+        theta = np.mean(self.yawBuff)
          #Calculate closest rotation to get to target angle
         #theta = (self.currentYaw+360)%360
         #theta = (theta-360) if (theta >180) else theta
@@ -213,7 +226,7 @@ class PIDHoverDirective(AbstractDroneDirective):
         #rospy.logwarn("algTime: "+str(time.time()-algTime))
         if abs(self.rollError) > self.waitDist or abs(self.pitchError) > self.waitDist:
             yaw = 0
-            rospy.logwarn("not close enough to adjust yaw")
+            #rospy.logwarn("not close enough to adjust yaw")
         return directiveStatus, (roll, pitch, yaw, zVel), image, None,self.moveTime, self.waitTime,None
 
 

@@ -46,7 +46,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
         # getting access to elements in DroneVideo and FlightstatsReciever
         super(DroneMaster,self).__init__()
         
-        self.objectName = "NASA Airplane"
+        self.objectName = "Test Object"
         self.startingAngle = 0
         self.circleRadius = 1 #meters
         self.circlePoints = 8 #numbers of points equally spaced along circle
@@ -63,7 +63,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
 
         # Seting up a timestamped folder inside Flight_Info that will have the pictures & log of this flight
         self.droneRecordPath= (expanduser("~")+"/drone_ws/src/SVCL_ardrone_automation/src/Flight_Info/"
-        + datetime.datetime.now().strftime("%m-%d-%Y__%H:%M:%S, %A")+"_Flight_" + self.objectName + "/")
+        + self.objectName +"_Flight_" + datetime.datetime.now().strftime("%m-%d-%Y__%H:%M:%S, %A")+"/")
         if not os.path.exists(self.droneRecordPath):
             os.makedirs(self.droneRecordPath)
         #self.logger = Logger(self.droneRecordPath, "AR Drone Flight")
@@ -88,7 +88,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
         self.emergency = False
         self.captureRound = 0.5
         self.oldBattery = -1
-        self.photoDirective = CapturePhotoDirective(self.droneRecordPath, 1, 0.014, self.objectName, self.circlePoints, 1000, 0)
+        self.photoDirective = CapturePhotoDirective(self.droneRecordPath, 30, 0.014, self.objectName, self.circlePoints, 1000, 0)
         self.keySub = rospy.Subscriber('/controller/keyboard',ROSString,self.keyPress)
     # Each state machine that drone mastercan use is defined here;
     # When key is pressed, define the machine to be used and switch over to it.
@@ -119,14 +119,12 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
                 alg.append((pidDirectives[index],40))
                 alg.append(( SetCameraDirective("FRONT"), 1 ))
                 alg.append(( IdleDirective("Pause for setting camera to front"), 25 ))
-                alg.append(( self.photoDirective, 30 ))
+                alg.append(( self.photoDirective, 1 ))
                 alg.append((SetCameraDirective("BOTTOM"), 1 ))
                 alg.append(( IdleDirective("Pause for setting camera to bottom"), 25 ))
             #alg.append( ( LandDirective(),1) )
             algCycles = 1
             end = [
-            ( SetCameraDirective("FRONT"), 1 ), ( IdleDirective("Pause for setting camera to bottom"), 25 ),
-            ( self.photoDirective, 1 ),
             ( LandDirective(), 1), ( IdleDirective("Pause for land"), 25 ),
             ( self.photoDirective, 1, None, "SavePhotos")
             ]
@@ -150,7 +148,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
         # save all pictures in cache
         elif key == ord('x'):
             self.SaveCachePictures()
-
+        '''
         elif key == ord('9') or key == ord('0'):
 
             # main algorithm components
@@ -237,7 +235,7 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
             alg = [testalg]
 
             self.MachineSwitch( None, alg, algCycles, None, TEST_MACHINE)
-
+        '''
 
     # Taking in some machine's definition of states and a string name,
     # provides a "switch" for loading and removing the machines that
@@ -259,8 +257,11 @@ class DroneMaster(DroneVideo, FlightstatsReceiver, DroneTracker):
             self.stateMachine.DefineMachine(newMachineInit, newMachineAlg,
             newMachineAlgCycles, newMachineEnd, self )
             self.currMachine = newMachineName
-
-        
+        self.track = tracker()
+        self.track.yaw = (0,0)
+        self.track.loc = (0,0,0,0)
+        self.track.landMark = (0,0,0,0)
+        self.trackerPub.publish(self.track)
         rospy.logwarn('======= Drone Master: Changing from the "' + str(oldMachine) +
         '" machine to the "' + str(self.currMachine) + '" machine =======')
         rospy.logwarn("Finished algorithm in "+str(time.time()-self.startTime)+" seconds.")
